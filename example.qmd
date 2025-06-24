@@ -1,0 +1,17 @@
+---
+title: "Statgl-shortcodes Example"
+format:
+  html:
+    css: styles.css
+---
+
+## Heading
+
+{{< kpicard 
+  value = 123.456.789
+  title = "Hello"
+  subtitle = "World"
+  link = "https://www.example.com"
+  style = "background-color:lightblue;"
+>}}
+

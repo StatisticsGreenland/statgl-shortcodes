@@ -1,0 +1,17 @@
+.KeyBox {
+  padding: 12px;
+}
+
+.KeyBox p {
+  font-size: 0.9em;
+  margin: 0px;
+}
+
+.KeyValue {
+  font-size: 40px;
+  font-weight: 900;
+}
+
+.KeySubtitle {
+  font-size: 0.7em;
+}
