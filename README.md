@@ -18,13 +18,21 @@ you're using version control, you will want to check in this directory.
 
 To use the extension, include it in your Quarto project’s _quarto.yml:
 
-``` bash
+``` yaml
 project:
   type: website
 
 contributes:
   shortcodes:
     - statgl-shortcodes
+```
+
+To enable styling, you need to include styles.css manually in your Quarto project:
+
+``` yaml
+format:
+  html:
+    css: _extensions/statgl-shortcodes/styles.css
 ```
 
 You can then use the provided shortcodes in your .qmd files.

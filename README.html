@@ -369,12 +369,17 @@ this directory.</p>
 <h2>Using</h2>
 <p>To use the extension, include it in your Quarto project’s
 _quarto.yml:</p>
-<pre class="bash"><code>project:
+<pre class="yaml"><code>project:
   type: website
 
 contributes:
   shortcodes:
     - statgl-shortcodes</code></pre>
+<p>To enable styling, you need to include styles.css manually in your
+Quarto project:</p>
+<pre class="yaml"><code>format:
+  html:
+    css: _extensions/statgl-shortcodes/styles.css</code></pre>
 <p>You can then use the provided shortcodes in your .qmd files.</p>
 </div>
 <div id="examples" class="section level2">
