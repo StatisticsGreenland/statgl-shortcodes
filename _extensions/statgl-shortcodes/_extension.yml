@@ -5,3 +5,6 @@ quarto-required: ">=1.6.0"
 contributes:
   shortcodes:
     - statgl-shortcodes.lua
+format:
+  html:
+    css: styles.css
