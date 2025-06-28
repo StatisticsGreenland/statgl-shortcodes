@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 # Statgl-shortcodes Extension For Quarto
 
 A Quarto extension that provides custom shortcodes for displaying
