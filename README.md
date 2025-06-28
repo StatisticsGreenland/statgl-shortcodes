@@ -32,7 +32,7 @@ To enable styling, you need to include styles.css manually in your Quarto projec
 ``` yaml
 format:
   html:
-    css: _extensions/statgl-shortcodes/styles.css
+    css: _extensions/StatisticsGreenland/statgl-shortcodes/styles.css
 ```
 
 You can then use the provided shortcodes in your .qmd files.
