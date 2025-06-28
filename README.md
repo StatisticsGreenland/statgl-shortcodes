@@ -22,8 +22,9 @@ To use the extension, include it in your Quarto project’s _quarto.yml:
 project:
   type: website
 
-extensions:
-  - statgl-shortcodes
+contributes:
+  shortcodes:
+    - statgl-shortcodes
 ```
 
 You can then use the provided shortcodes in your .qmd files.
