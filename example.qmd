@@ -5,6 +5,12 @@ format:
     css: styles.css
 ---
 
+```{r}
+library(tidyverse)
+library(statgl)
+```
+
+
 ## Heading
 
 {{< kpicard 
@@ -15,3 +21,9 @@ format:
   style = "background-color:lightblue;"
 >}}
 
+{{< plotbox
+  title = "Hello world"
+  plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
+  accordion = "Mere om figuren"
+  more = "Mere om figuren"
+>}}

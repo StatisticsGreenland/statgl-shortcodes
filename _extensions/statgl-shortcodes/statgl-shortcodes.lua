@@ -218,11 +218,11 @@ function plotbox(args, kwargs, meta)
         <p>
   <div class="accordion" id="accordionExample">
   <div class="accordion-item">
-    <h2 class="accordion-header" id="heading-%s">
+    <div class="accordion-header" id="heading-%s">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-%s" aria-expanded="false" aria-controls="%s">
         %s
       </button>
-    </h2>
+    </div>
     <div id="collapse-%s" class="accordion-collapse collapse" aria-labelledby="heading-%s" data-bs-parent="#accordionExample">
       <div class="accordion-body">
         %s
