@@ -238,7 +238,7 @@ function plotbox(args, kwargs, meta)
     <p>
     <div class="card">
       <div class="card-body">
-        <div class="card-title">%s</div>
+        <h2 class="card-title">%s</h2>
         <p class="card-text">%s</p>
         %s
         %s
