@@ -238,7 +238,7 @@ function plotbox(args, kwargs, meta)
     <p>
     <div class="card">
       <div class="card-body">
-        <h2 class="card-title">%s</h2>
+        <div class="card-title">%s</div>
         <p class="card-text">%s</p>
         %s
         %s
@@ -301,11 +301,11 @@ function feature(args, kwargs, meta)
     <div style ="margin:15px;">
       <div class="accordion" id="accordionExample">
         <div class="accordion-item">
-          <h2 class="accordion-header" id="heading-%s">
+          <div class="accordion-header" id="heading-%s">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-%s" aria-expanded="false" aria-controls="%s">
               %s
             </button>
-          </h2>
+          </div>
           <div id="collapse-%s" class="accordion-collapse collapse" aria-labelledby="heading-%s" data-bs-parent="#accordionExample">
             <div class="accordion-body">
               %s
