@@ -137,6 +137,7 @@ function shorty(args, kwargs, meta)
           <div class="g-col-12 g-col-md-6">
             %s
             %s
+            %s
           </div>
           <div class="g-col-12 g-col-md-6">
              <div class="grid" style="width:100%%;">
