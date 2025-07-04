@@ -40,3 +40,7 @@ luac.out
 *.hex
 
 .Rproj.user
+.DS_Store
+.DS_Store
+.RData
+.Rhistory
