@@ -18,11 +18,11 @@ end
 
   local html = string.format([[
     <div class="card KeyBox"%s%s>
-      <div class="KeyTitle">%s</div>
       <div class="KeyValue">%s</div>
+      <div class="KeyTitle">%s</div>
       <div class="KeySubtitle">%s</div>
     </div>
-  ]], onclick_attr, cursor_style, title, value, subtitle)
+  ]], onclick_attr, cursor_style, value, title, subtitle)
 
   return pandoc.RawBlock("html", html)
 end
