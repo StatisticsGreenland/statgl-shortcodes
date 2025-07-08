@@ -1,6 +1,6 @@
 title: Statgl-shortcodes
 author: Emil Malta
-version: 1.0.9003
+version: 1.0.9004
 quarto-required: ">=1.6.0"
 contributes:
   shortcodes:
