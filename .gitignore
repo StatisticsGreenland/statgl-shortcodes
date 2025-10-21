@@ -44,3 +44,5 @@ luac.out
 .DS_Store
 .RData
 .Rhistory
+
+/.luarc.json
