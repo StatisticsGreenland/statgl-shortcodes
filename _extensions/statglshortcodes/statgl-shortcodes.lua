@@ -67,16 +67,18 @@ end
 function shorty(args, kwargs, meta)
   local utils = pandoc.utils
 
-  local title       = utils.stringify(kwargs["title"] or "")
-  local subtitle    = utils.stringify(kwargs["subtitle"] or "")
-  local description = utils.stringify(kwargs["description"] or "")
-  local plot_title  = utils.stringify(kwargs["plot_title"] or "")
-  local plot_html   = utils.stringify(kwargs["plot"] or "")
-  local plot_link   = utils.stringify(kwargs["plot_link"] or "")
-  local img         = utils.stringify(kwargs["img"] or "")
-  local tbl_title   = utils.stringify(kwargs["tbl_title"] or "")
-  local tbl         = utils.stringify(kwargs["tbl"] or "")
-  local tbl_link    = utils.stringify(kwargs["tbl_link"] or "")
+  local title          = utils.stringify(kwargs["title"] or "")
+  local subtitle       = utils.stringify(kwargs["subtitle"] or "")
+  local description    = utils.stringify(kwargs["description"] or "")
+  local plot_title     = utils.stringify(kwargs["plot_title"] or "")
+  local plot_subtitle  = utils.stringify(kwargs["plot_subtitle"] or "")
+  local plot_html      = utils.stringify(kwargs["plot"] or "")
+  local plot_link      = utils.stringify(kwargs["plot_link"] or "")
+  local img            = utils.stringify(kwargs["img"] or "")
+  local tbl_title      = utils.stringify(kwargs["tbl_title"] or "")
+  local tbl_subtitle   = utils.stringify(kwargs["tbl_subtitle"] or "")
+  local tbl            = utils.stringify(kwargs["tbl"] or "")
+  local tbl_link       = utils.stringify(kwargs["tbl_link"] or "")
   local accordion_title = utils.stringify(kwargs["accordion"] or "Links")
 
   -- clean plot html
@@ -134,24 +136,37 @@ function shorty(args, kwargs, meta)
   local has_tbl  = (tbl_title  ~= "" or tbl       ~= "" or tbl_link  ~= "")
   local has_img  = (img ~= "")
 
+  -- plot block
   local plot_block = ""
   if has_plot then
+    local plot_sub = ""
+    if plot_subtitle ~= "" then
+      plot_sub = string.format('<div class="text-muted" style="font-size:0.9em;margin-bottom:0.3rem;">%s</div>', plot_subtitle)
+    end
     plot_block = string.format([[
+      <div class="card-title">%s</div>
       %s
       %s
       %s
-    ]], plot_title, plot_html, plot_link)
+    ]], plot_title, plot_sub, plot_html, plot_link)
   end
 
+  -- table block
   local tbl_block = ""
   if has_tbl then
+    local tbl_sub = ""
+    if tbl_subtitle ~= "" then
+      tbl_sub = string.format('<div class="text-muted" style="font-size:0.9em;margin-bottom:0.3rem;">%s</div>', tbl_subtitle)
+    end
     tbl_block = string.format([[
       <div class="card-title">%s</div>
       %s
       %s
-    ]], tbl_title, tbl, tbl_link)
+      %s
+    ]], tbl_title, tbl_sub, tbl, tbl_link)
   end
 
+  -- image block
   local img_block = ""
   if has_img then
     img_block = string.format([[
@@ -161,67 +176,55 @@ function shorty(args, kwargs, meta)
     ]], img)
   end
 
+  -- grid logic
   local grid_block = ""
-
   if has_plot and has_tbl then
-    -- 2 columns
     grid_block = string.format([[
       <div class="grid">
-        <div class="g-col-12 g-col-md-6">
-          %s
-        </div>
+        <div class="g-col-12 g-col-md-6">%s</div>
         <div class="g-col-12 g-col-md-6">
           <div class="grid" style="width:100%%;">
             %s
-            <div class="g-col-12">
-              %s
-            </div>
+            <div class="g-col-12">%s</div>
           </div>
         </div>
       </div>
     ]], plot_block, (has_img and img_block or ""), tbl_block)
   elseif has_plot then
-    -- only plot -> full width, img under
     grid_block = string.format([[
       <div class="grid">
-        <div class="g-col-12">
-          %s
-        </div>
+        <div class="g-col-12">%s</div>
         %s
       </div>
     ]], plot_block, (has_img and img_block or ""))
   elseif has_tbl then
-    -- only table -> full width, img above (looks nicer)
     grid_block = string.format([[
       <div class="grid">
         %s
-        <div class="g-col-12">
-          %s
-        </div>
+        <div class="g-col-12">%s</div>
       </div>
     ]], (has_img and img_block or ""), tbl_block)
   elseif has_img then
-    -- just image
-    grid_block = string.format([[
-      <div class="grid">
-        %s
-      </div>
-    ]], img_block)
-  else
-    grid_block = ""  -- textbox only
+    grid_block = string.format('<div class="grid">%s</div>', img_block)
+  end
+
+  -- card subtitle
+  local subtitle_html = ""
+  if subtitle ~= "" then
+    subtitle_html = string.format('<div class="text-muted" style="margin-bottom:0.5rem;">%s</div>', subtitle)
   end
 
   local html = string.format([[
     <div class="card mb-4">
       <div class="card-body">
         <h2 class="card-title">%s</h2>
-        <div class="card-subtitle mb-2 text-muted">%s</div>
+        %s
         <p class="card-text">%s</p>
         %s
         %s
       </div>
     </div>
-  ]], title, subtitle, description, grid_block, link_list)
+  ]], title, subtitle_html, description, grid_block, link_list)
 
   return pandoc.RawBlock("html", html)
 end
