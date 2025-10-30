@@ -27,3 +27,9 @@ library(statgl)
   accordion = "Mere om figuren"
   more = "Mere om figuren"
 >}}
+
+
+{{< shorty 
+  title="Metode"
+  description="Her beskrives metoder som anvendes i Befolkningsstatistikken."
+>}}

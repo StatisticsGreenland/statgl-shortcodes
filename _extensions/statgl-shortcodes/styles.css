@@ -1,18 +1,383 @@
-.KeyBox {
-  background-color: floralwhite;
-  padding: 12px;
+/* ========= Base tokens (plain CSS vars) ========= */
+
+/* Default colors */
+:root{
+  --brand:        darkorange;    /* accent */
+  --ink:          #1f2937;     /* primary text */
+  --ink-soft:     #6b7280;     /* secondary text */
+  --panel:        #ffffff;     /* card bg */
+  --paper:        #f7f7f8;     /* page bg bands */
+  --line:         rgba(0,0,0,.08);
+  --shadow:       0 6px 18px rgba(0,0,0,.06);
+  --radius:       12px;
 }
 
-.KeyBox p {
-  font-size: 0.9em;
-  margin: 0px;
+/* Dark-mode friendly defaults */
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:        #e5e7eb;
+    --ink-soft:   #a3a3a3;
+    --panel:      #101214;
+    --paper:      #0c0d0e;
+    --line:       rgba(255,255,255,.12);
+    --shadow:     0 10px 24px rgba(0,0,0,.5);
+  }
+  body{ background: var(--paper); }
 }
 
+/* === Global rhythm tokens === */
+:root {
+  --space-xs: 0.5rem;
+  --space-sm: 0.5rem;
+  --space-md: 0.5rem;
+  --space-lg: 3rem;
+}
+
+.navbar {
+  background-color: var(--brand);
+}
+
+/* Better defaults for text and links */
+body{
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+a{ color: var(--brand); text-decoration: none; }
+a:hover{ text-decoration: underline; }
+
+/* ========= Hero (builds on your draft) ========= */
+.hero-banner{
+  position: relative;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.25);
+  border-radius: 0; /* keep full-bleed feel */
+}
+/* overlay strength tuned for readability */
+.hero-banner{
+  background-image:
+    linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.35)),
+    var(--hero-image, url("image.png"));
+  background-size: cover;
+}
+/* Title + subtitle sizing (calm, not shouty) */
+.hero-banner h1 {
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.52em;  /* subtle, adds authority */
+  line-height: 1.0;       /* slightly tighter for uppercase */
+  font-size: 0.70em; /* scales gracefully */
+  margin-bottom: 1.75rem;
+  color: darkorange;
+}
+.hero-banner .subtle{
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  opacity: .95;
+}
+
+.hero-banner p {
+  color: var(--ink);
+  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
+  font-weight: 400;
+  opacity: 0.95;
+}
+
+/* Buttons: consistent style + focus */
+.hero-banner .btn{
+  padding-inline: 1.1rem;
+  padding-block: .6rem;
+  border-radius: 999px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.hero-banner .btn-primary{
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.hero-banner .btn-primary:hover{
+  filter: brightness(.96);
+}
+.hero-banner .btn-secondary{
+  background: transparent;
+  color: #fff;
+  border: 2px solid rgba(255,255,255,.85);
+}
+.hero-banner .btn-secondary:hover{
+  background: rgba(255,255,255,.12);
+}
+
+/* ========= KPI cards ========= */
+/* KPI grid wrapper */
+.kpi-grid {
+  max-width: 1100px;    /* or try 1200px if you want a looser fit */
+  margin: 0 auto;       /* centers it horizontally */
+  padding-inline: 1rem; /* adds breathing room on mobile */
+}
+
+
+.card.KeyBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+
+  background: var(--panel);
+  border: none;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.75rem 1rem;
+  min-height: 9rem;
+
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.card.KeyBox:hover {
+  transform: translateY(-2px);
+}
+.card.KeyBox:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--brand) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* Value: big and commanding */
 .KeyValue {
-  font-size: 40px;
-  font-weight: 900;
+  color: var(--ink);
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.25rem;
 }
 
+/* Title: bold label */
+.KeyTitle {
+  color: var(--ink);
+  font-size: .7rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+/* Subtitle: light and secondary */
 .KeySubtitle {
-  font-size: 0.7em;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: center;
+  margin: 0;
+}
+
+/* ========= Sections band ========= */
+.sections{
+  background: var(--paper);
+  padding: 2rem 0;
+}
+/* Section cards tidy + readable */
+.sectioncard{
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  color: inherit;
+}
+.sectioncard {
+  transition: transform .15s ease, box-shadow .15s ease;  cursor: pointer;
+}
+
+.sectioncard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.sectioncard-icon {
+  font-size: 4rem; /* smaller on desktop */
+  color: var(--brand);
+}
+
+/* Mobile layout */
+@media (max-width: 768px) {
+  .sectioncard .card-body {
+    flex-direction: row !important;
+    text-align: left !important;
+    align-items: center !important;
+  }
+
+  .sectioncard-icon {
+    font-size: 3rem;
+    margin-right: 1rem;
+    margin-bottom: 0 !important;
+  }
+
+  .sectioncard-text {
+    flex: 1;
+  }
+}
+
+/* Slightly tighter spacing and typography */
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.sectioncard .card-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+/* ========= Small rhythm tweaks ========= */
+.row.g-3{ --bs-gutter-x: 1rem; --bs-gutter-y: 1rem; }
+.grid.g-3{ gap: 1rem; }
+.container-xl, .container{
+  max-width: 1200px;
+}
+p{ margin: .5rem 0 .75rem; }
+
+/* ========= Motion respect ========= */
+@media (prefers-reduced-motion: reduce){
+  *{ animation: none !important; transition: none !important; }
+}
+
+/* === HERO section === */
+
+/* --- Hero base fade-in --- */
+.hero-banner {
+  opacity: 0;
+  animation: heroFadeIn 1.5s ease-out forwards;
+  animation-delay: 0.2s;
+}
+
+@keyframes heroFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --- Logo: fade + gentle rise --- */
+.hero-logo {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: logoRise 1.2s ease-out forwards;
+  animation-delay: 0.6s;
+}
+
+@keyframes logoRise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Title: fade + slight upward motion --- */
+.hero-banner h1 {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: titleRise 1s ease-out forwards;
+  animation-delay: 0.9s;
+}
+
+@keyframes titleRise {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Optional: fade-in of subtitle/text --- */
+.hero-banner p,
+.hero-banner br + text {
+  opacity: 0;
+  animation: subtitleFade 1s ease-out forwards;
+  animation-delay: 0.1s;
+}
+
+@keyframes subtitleFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* --- Buttons appear last --- */
+.hero-banner .btn {
+  opacity: 0;
+  margin-bottom: 0.5rem;
+  animation: buttonFade 0.8s ease-out forwards;
+  animation-delay: 0.5s;
+}
+
+@keyframes buttonFade {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === KPI wrapper === */
+.kpi-grid {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: var(--space-md) var(--space-sm);
+}
+
+/* Grid spacing (horizontal + vertical gaps) */
+.kpi-grid .grid {
+  gap: 1.25rem;
+}
+
+/* Slight separation between hero and KPI block */
+.hero-banner + .kpi-grid {
+  margin-top: var(--space-md);
+}
+
+/* === KPI cards === */
+.card.KeyBox {
+  padding: 1.5rem 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+  animation: buttonFade 0.8s ease-out forwards;
+
+}
+
+/* === Sections wrapper === */
+.sections {
+  background: var(--paper, #f7f7f8);
+  padding: var(--space-lg) var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.sections .grid {
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* === Section cards === */
+.sectioncard {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  animation: buttonFade 0.4s ease-out forwards;
+
+}
+
+#quarto-content>* {
+    padding-top: 14px;
+}
+
+#map {
+   border-radius: 12px;
+   max-height: 70px;
+ }
+
+.footergrid {
+  max-width: 1100px;
+  margin-inline: auto;
+  padding: var(--space-md) var(--space-sm);
+  background-color: var(--panel);
+  border-radius: 12px;
+  padding: 1.5em;
 }
