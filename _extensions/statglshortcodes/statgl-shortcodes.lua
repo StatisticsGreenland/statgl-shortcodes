@@ -1,6 +1,6 @@
 function kpicard(args, kwargs, meta)
-  local title = pandoc.utils.stringify(kwargs["title"] or "")
-  local subtitle = pandoc.utils.stringify(kwargs["subtitle"] or "")
+local title = pandoc.utils.stringify(kwargs["title"] or "")
+local subtitle = pandoc.utils.stringify(kwargs["subtitle"] or "")
   local value = pandoc.utils.stringify(kwargs["value"] or "")
   local link = pandoc.utils.stringify(kwargs["link"] or "")
   local style = pandoc.utils.stringify(kwargs["style"] or "")
@@ -65,67 +65,151 @@ function sectioncard(args, kwargs, meta)
 end
 
 function shorty(args, kwargs, meta)
-
   local utils = pandoc.utils
 
-  local title = utils.stringify(kwargs["title"] or "")
-  local subtitle = utils.stringify(kwargs["subtitle"] or "")
+  local title       = utils.stringify(kwargs["title"] or "")
+  local subtitle    = utils.stringify(kwargs["subtitle"] or "")
   local description = utils.stringify(kwargs["description"] or "")
-  local plot_title = utils.stringify(kwargs["plot_title"] or "")
-  local plot_html = utils.stringify(kwargs["plot"] or "")
-  local plot_link = utils.stringify(kwargs["plot_link"] or "")
-  local img = utils.stringify(kwargs["img"] or "")
-  local tbl_title = utils.stringify(kwargs["tbl_title"] or "")
-  local tbl = utils.stringify(kwargs["tbl"] or "")
-  local tbl_link = utils.stringify(kwargs["tbl_link"] or "")
+  local plot_title  = utils.stringify(kwargs["plot_title"] or "")
+  local plot_html   = utils.stringify(kwargs["plot"] or "")
+  local plot_link   = utils.stringify(kwargs["plot_link"] or "")
+  local img         = utils.stringify(kwargs["img"] or "")
+  local tbl_title   = utils.stringify(kwargs["tbl_title"] or "")
+  local tbl         = utils.stringify(kwargs["tbl"] or "")
+  local tbl_link    = utils.stringify(kwargs["tbl_link"] or "")
   local accordion_title = utils.stringify(kwargs["accordion"] or "Links")
 
-  -- Clean up any {=html} markers that might be present
-  plot_html = plot_html:gsub("`{=html}", "")
-  plot_html = plot_html:gsub("`", "")
-  plot_html = plot_html:gsub("^%s+", ""):gsub("%s+$", "") -- trim whitespace
+  -- clean plot html
+  plot_html = plot_html:gsub("`{=html}", ""):gsub("`", ""):gsub("^%s+", ""):gsub("%s+$", "")
 
-  plot_link = '<span style="font-size: 0.7em;">' .. plot_link .. '</span>' 
-  plot_link = pandoc.write(pandoc.read(plot_link, "markdown"), "html")
-  
-  tbl_link = '<span style="font-size: 0.7em;">' .. tbl_link .. '</span>' 
-  tbl_link = pandoc.write(pandoc.read(tbl_link, "markdown"), "html")
+  local function md_to_html(md)
+    if md == "" then return "" end
+    return pandoc.write(pandoc.read(md, "markdown"), "html")
+  end
 
+  if plot_link ~= "" then
+    plot_link = '<span style="font-size:0.7em;">' .. plot_link .. '</span>'
+    plot_link = md_to_html(plot_link)
+  end
+
+  if tbl_link ~= "" then
+    tbl_link = '<span style="font-size:0.7em;">' .. tbl_link .. '</span>'
+    tbl_link = md_to_html(tbl_link)
+  end
+
+  -- extra links
   local links = {}
   for key, val in pairs(kwargs) do
-    if key:match("^link_") then
-      table.insert(links, val)
-    end
+    if key:match("^link_") then table.insert(links, val) end
   end
 
   local rendered_links = {}
   for _, mdlink in ipairs(links) do
-    local html = pandoc.write(pandoc.read(mdlink, "markdown"), "html")
+    local html = md_to_html(mdlink)
     html = html:gsub("^<p>(.*)</p>\n?$", "%1")
     table.insert(rendered_links, string.format("<li>%s</li>", html))
   end
 
-  local link_list = table.concat(rendered_links, "\n")
   local randcase = string.char(math.random(97, 97 + 25))
-
-  link_list = string.format([[
-  <p>
-  <div class="accordion" id="accordionExample">
-  <div class="accordion-item">
-    <div class="accordion-header" id="heading-%s">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-%s" aria-expanded="false" aria-controls="%s">
-        %s
-      </button>
-    </div>
-    <div id="collapse-%s" class="accordion-collapse collapse" aria-labelledby="heading-%s" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        %s
+  local link_list = ""
+  if #rendered_links > 0 then
+    link_list = string.format([[
+    <div class="accordion" id="accordionExample">
+      <div class="accordion-item">
+        <div class="accordion-header" id="heading-%s">
+          <button class="accordion-button collapsed" type="button"
+            data-bs-toggle="collapse" data-bs-target="#collapse-%s"
+            aria-expanded="false" aria-controls="%s">%s</button>
+        </div>
+        <div id="collapse-%s" class="accordion-collapse collapse"
+             aria-labelledby="heading-%s" data-bs-parent="#accordionExample">
+          <div class="accordion-body"><ul>%s</ul></div>
+        </div>
       </div>
     </div>
-  </div>
-  </div>
-  </p>
-  ]], randcase, randcase, randcase, accordion_title, randcase, randcase, link_list)
+    ]], randcase, randcase, randcase, accordion_title, randcase, randcase, table.concat(rendered_links, "\n"))
+  end
+
+  local has_plot = (plot_title ~= "" or plot_html ~= "" or plot_link ~= "")
+  local has_tbl  = (tbl_title  ~= "" or tbl       ~= "" or tbl_link  ~= "")
+  local has_img  = (img ~= "")
+
+  local plot_block = ""
+  if has_plot then
+    plot_block = string.format([[
+      %s
+      %s
+      %s
+    ]], plot_title, plot_html, plot_link)
+  end
+
+  local tbl_block = ""
+  if has_tbl then
+    tbl_block = string.format([[
+      <div class="card-title">%s</div>
+      %s
+      %s
+    ]], tbl_title, tbl, tbl_link)
+  end
+
+  local img_block = ""
+  if has_img then
+    img_block = string.format([[
+      <div class="g-col-12" style="display:flex;align-items:center;justify-content:center;">
+        <img src="%s" class="img-fluid" style="max-height:250px;">
+      </div>
+    ]], img)
+  end
+
+  local grid_block = ""
+
+  if has_plot and has_tbl then
+    -- 2 columns
+    grid_block = string.format([[
+      <div class="grid">
+        <div class="g-col-12 g-col-md-6">
+          %s
+        </div>
+        <div class="g-col-12 g-col-md-6">
+          <div class="grid" style="width:100%%;">
+            %s
+            <div class="g-col-12">
+              %s
+            </div>
+          </div>
+        </div>
+      </div>
+    ]], plot_block, (has_img and img_block or ""), tbl_block)
+  elseif has_plot then
+    -- only plot -> full width, img under
+    grid_block = string.format([[
+      <div class="grid">
+        <div class="g-col-12">
+          %s
+        </div>
+        %s
+      </div>
+    ]], plot_block, (has_img and img_block or ""))
+  elseif has_tbl then
+    -- only table -> full width, img above (looks nicer)
+    grid_block = string.format([[
+      <div class="grid">
+        %s
+        <div class="g-col-12">
+          %s
+        </div>
+      </div>
+    ]], (has_img and img_block or ""), tbl_block)
+  elseif has_img then
+    -- just image
+    grid_block = string.format([[
+      <div class="grid">
+        %s
+      </div>
+    ]], img_block)
+  else
+    grid_block = ""  -- textbox only
+  end
 
   local html = string.format([[
     <div class="card mb-4">
@@ -133,31 +217,11 @@ function shorty(args, kwargs, meta)
         <h2 class="card-title">%s</h2>
         <div class="card-subtitle mb-2 text-muted">%s</div>
         <p class="card-text">%s</p>
-        <div class="grid">
-          <div class="g-col-12 g-col-md-6">
-            %s
-            %s
-            %s
-          </div>
-          <div class="g-col-12 g-col-md-6">
-             <div class="grid" style="width:100%%;">
-             <div class="g-col-12">
-  <div class="card-title">%s</div>
-</div>
-<div class="g-col-12" style="display:flex;align-items:center;justify-content:center;">
-  <img src="%s" class="img-fluid" style="height:250px;width:250px;">
-</div>
-              <div class="g-col-12">
-                %s
-                %s
-              </div>
-             </div>
-          </div>
-        </div>
+        %s
         %s
       </div>
     </div>
-  ]], title, subtitle, description, plot_title, plot_html, plot_link, tbl_title, img, tbl, tbl_link, link_list)
+  ]], title, subtitle, description, grid_block, link_list)
 
   return pandoc.RawBlock("html", html)
 end

@@ -30,5 +30,6 @@ library(statgl)
 
 {{< shorty 
   title="Metode"
+  plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
   description="Her beskrives metoder som anvendes i Befolkningsstatistikken."
 >}}
