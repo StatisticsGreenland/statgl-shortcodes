@@ -1,10 +1,13 @@
-title: Statgl-shortcodes
+title: statglshortcodes
 author: Emil Malta
-version: 1.0.9005
+version: 1.0.9006
 quarto-required: ">=1.6.0"
 contributes:
   shortcodes:
     - statgl-shortcodes.lua
   formats:
     html:
-      theme: styles.css
+      css:
+        - styles.css
+      include-after-body:
+        - footer.html

@@ -22,19 +22,12 @@ To use the extension, include it in your Quarto project’s _quarto.yml:
 project:
   type: website
 
+format: statglshortcodes-html
+
 contributes:
   shortcodes:
     - statgl-shortcodes
 ```
-
-To enable styling, you need to include styles.css manually in your Quarto project:
-
-``` yaml
-format:
-  html:
-    css: _extensions/StatisticsGreenland/statgl-shortcodes/styles.css
-```
-
 You can then use the provided shortcodes in your .qmd files.
 
 ## Examples

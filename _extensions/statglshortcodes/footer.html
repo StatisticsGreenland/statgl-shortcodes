@@ -1,0 +1,79 @@
+<footer class="mt-5 pt-4 border-top">
+  <div class="grid footergrid py-4">
+
+      
+      <!-- Contact -->
+      <div class="g-col-12 g-col-md-4">
+          <h5 class="fw-bold mb-2">Grønlands Statistik</h5>
+          <ul class="list-unstyled mb-3 text-muted small">
+              <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
+              <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299000000">+299 00 00 00</a></li>
+              <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:info@stat.gl">info@stat.gl</a></li>
+              <li class="mb-1"><i class="bi bi-clock me-2"></i>Man–Fre 09:00–15:00</li>
+            </ul>
+            
+            <div class="small text-muted">
+                <a href="/about/" class="link-secondary me-3">Om os</a>
+                <a href="/contact/" class="link-secondary me-3">Kontakt</a>
+                <a href="/privacy/" class="link-secondary">Privatliv</a>
+            </div>
+        </div>
+        
+        <div class="g-col-12 g-col-md-4">
+            <div class="fw-bold mb-2">Data & værktøjer</div>
+            <ul class="list-unstyled text-muted mb-0">
+                <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Statistikbank</a></li>
+                <li class="mb-1"><a class="link-secondary" href="/udgivelser/kalender/">Udgivelseskalender</a></li>
+                <li class="mb-1"><a class="link-secondary" href="/api/">API & dokumentation</a></li>
+                <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
+            </ul>
+        </div>
+        
+        <!-- Map -->
+        <div class="g-col-12 g-col-md-4">
+          <div id="map" class="w-100 shadow-sm border rounded-3"></div>
+        </div>
+
+    <!-- Utility row -->
+    
+  </div>
+
+  <!-- Legal strip -->
+  <div class="border-top mt-4 py-3 small text-muted">
+    <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+      <div>© <span id="footer-year"></span> Grønlands Statistik · Data og indhold må bruges med kildeangivelse (CC BY 4.0).</div>
+      <div>CVR: 00000000</div>
+    </div>
+  </div>
+
+  <!-- Leaflet CSS/JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    #map{ width:100%; aspect-ratio:1/1; min-height:300px; }
+    .leaflet-container{ border-radius:12px; }
+    footer a.link-secondary:hover{ color:#e4572e !important; }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+      const lat = 64.17272, lng = -51.73864;
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const tiles = prefersDark
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      const attribution = prefersDark ? '&copy; OpenStreetMap · &copy; CARTO' : '&copy; OpenStreetMap';
+
+      const map = L.map('map', { scrollWheelZoom:false }).setView([lat, lng], 17);
+      L.tileLayer(tiles, { maxZoom:18, attribution }).addTo(map);
+      L.marker([lat, lng]).addTo(map)
+        .bindPopup('<strong>Grønlands Statistik</strong><br>Imaneq&nbsp;9, 3900&nbsp;Nuuk')
+        .openPopup();
+
+      setTimeout(() => map.invalidateSize(), 200);
+    });
+  </script>
+</footer>
