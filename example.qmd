@@ -25,3 +25,5 @@ library(statgl)
   description="Pulling from [stat.gl](https://stat.gl) with `statgl_fetch()`."
   plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
 >}}
+
+{{< explain word = "hello" explanation = "Hello, **there**">}}

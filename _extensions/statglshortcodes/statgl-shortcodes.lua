@@ -426,3 +426,46 @@ function contact(args, kwargs, meta)
   --return(icon)
 end
 
+function explain(args, kwargs, meta)
+  local utils = pandoc.utils
+
+  local word = utils.stringify(kwargs["word"] or "")
+  local explanation = utils.stringify(kwargs["explanation"] or "")
+  local randcase = randstring(10)
+
+  -- helper: markdown → html
+  local function md_to_html(md)
+    if md == "" then return "" end
+    return pandoc.write(pandoc.read(md, "markdown"), "html")
+  end
+
+  -- convert and clean explanation
+  local explanation_html = ""
+  if explanation ~= "" then
+    explanation_html = md_to_html(explanation)
+    explanation_html = explanation_html:gsub("^<p>(.*)</p>\n?$", "%1") -- strip outer <p>
+  end
+
+  local html = string.format([[
+  <button class="btn btn-primary" type="button" data-bs-toggle="collapse"
+          data-bs-target="#collapse-%s" aria-expanded="false"
+          aria-controls="collapse-%s" style="margin-top:15px">
+    %s
+  </button>
+  <div class="collapse" id="collapse-%s">
+    <div class="card card-body">
+      %s
+    </div>
+  </div>
+  ]], randcase, randcase, word, randcase, explanation_html)
+
+  return pandoc.RawBlock("html", html)
+end
+
+function randstring(chars)
+  local s = ''
+  for i=1,chars do
+    s = s .. string.char(math.random(97,122))
+  end
+  return(s)
+end
