@@ -1,5 +1,4 @@
 ---
-title: "Statgl-shortcodes Example"
 format: statglshortcodes-html
 execute:
   message: false
@@ -20,18 +19,7 @@ library(statgl)
   link = "https://www.example.com"
 >}}
 
-{{< plotbox
+{{< shorty
   title = "Hello world"
   plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
-  accordion = "Mere om figuren"
-  more = "Mere om figuren"
->}}
-
-
-{{< shorty 
-  title="Metode"
-  plot_title = "Hello"
-  plot_subtitle = "There"
-  plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
-  description="Her beskrives metoder som anvendes i Befolkningsstatistikken."
 >}}
