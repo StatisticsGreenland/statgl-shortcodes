@@ -89,6 +89,14 @@ function shorty(args, kwargs, meta)
     return pandoc.write(pandoc.read(md, "markdown"), "html")
   end
 
+  -- NEW: description -> html
+  local description_html = ""
+  if description ~= "" then
+    description_html = md_to_html(description)
+    -- strip outer <p>...</p> if present
+    description_html = description_html:gsub("^<p>(.*)</p>\n?$", "%1")
+  end
+
   if plot_link ~= "" then
     plot_link = '<span style="font-size:0.7em;">' .. plot_link .. '</span>'
     plot_link = md_to_html(plot_link)
@@ -219,39 +227,14 @@ function shorty(args, kwargs, meta)
       <div class="card-body">
         <h2 class="card-title">%s</h2>
         %s
-        <p class="card-text">%s</p>
+        %s
         %s
         %s
       </div>
     </div>
-  ]], title, subtitle_html, description, grid_block, link_list)
-
-  return pandoc.RawBlock("html", html)
-end
-
-function randstring(chars)
-  local s = ''
-  for i=1,chars do
-    s = s .. string.char(math.random(97,122))
-  end
-  return(s)
-end
-
-function explain(args, kwargs, meta)
-  local word = pandoc.utils.stringify(kwargs["word"] or "")
-  local explanation = pandoc.utils.stringify(kwargs["explanation"] or "")
-  local randcase = randstring(10)
-
-  local html = string.format([[
-  <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-%s" aria-expanded="false" aria-controls="collapse-%s" style="margin-top:15px">
-    %s
-  </button>
-  <div class="collapse" id="collapse-%s">
-    <div class="card card-body">
-      %s
-    </div>
-  </div>
-  ]], randcase, randcase, word, randcase, explanation)
+  ]], title, subtitle_html,
+      (description_html ~= "" and string.format('<p class="card-text">%s</p>', description_html) or ""),
+      grid_block, link_list)
 
   return pandoc.RawBlock("html", html)
 end

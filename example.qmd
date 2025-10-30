@@ -19,7 +19,9 @@ library(statgl)
   link = "https://www.example.com"
 >}}
 
+
 {{< shorty
   title = "Hello world"
+  description="Pulling from [stat.gl](https://stat.gl) with `statgl_fetch()`."
   plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
 >}}
