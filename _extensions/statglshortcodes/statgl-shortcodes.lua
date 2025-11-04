@@ -27,24 +27,6 @@ end
   return pandoc.RawBlock("html", html)
 end
 
-function datawrapper(args, kwargs)
-  local id = kwargs["id"]
-  local height = kwargs["height"] or "400px"
-
-  if not id then
-    error("Missing required argument: id")
-  end
-
-  local html = string.format([[
-    <div style="min-height:%s" id="datawrapper-vis-%s">
-      <script type="text/javascript" defer src="https://datawrapper.dwcdn.net/%s/embed.js" charset="utf-8" data-target="#datawrapper-vis-%s"></script>
-      <noscript><img src="https://datawrapper.dwcdn.net/%s/full.png" alt="" /></noscript>
-    </div>
-  ]], height, id, id, id, id)
-
-  return pandoc.RawBlock("html", html)
-end
-
 function sectioncard(args, kwargs, meta)
   local icon = kwargs["icon"] or "bi-box"
   local title = kwargs["title"] or "Title"
