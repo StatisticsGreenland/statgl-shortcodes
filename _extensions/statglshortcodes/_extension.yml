@@ -7,7 +7,8 @@ contributes:
     - statgl-shortcodes.lua
   formats:
     html:
+      template: template.html   # 👈 use your template
+      filters:
+        - lang-flags.lua
       css:
         - styles.css
-      include-after-body:
-        - footer.html

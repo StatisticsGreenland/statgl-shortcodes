@@ -16,14 +16,18 @@ library(statgl)
   value = 123.456.789
   title = "Hello"
   subtitle = "World"
-  link = "https://www.example.com"
 >}}
 
-
+```{r}
+plt <- statgl_plot(statgl_fetch("BEXSTA"), time)
+tbl <- statgl_table(statgl_fetch("BEXSTA"), time)
+tbl
+```
 {{< shorty
   title = "Hello world"
   description="Pulling from [stat.gl](https://stat.gl) with `statgl_fetch()`."
-  plot = '`r statgl_plot(mpg, displ, hwy, group = class)`'
+  plot = '`r plt`'
+  tbl = '`r tbl`'
 >}}
 
 {{< explain word = "hello" explanation = "Hello, **there**">}}

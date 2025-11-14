@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="$lang$" xml:lang="$lang$"$if(dir)$ dir="$dir$"$endif$>
+
+<head>
+
+$metadata.html()$
+
+<style>
+$styles.html()$
+</style>
+
+<!-- htmldependencies:E3FAD763 -->
+$for(header-includes)$
+$header-includes$
+$endfor$
+
+$if(math)$
+$if(mathjax)$
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+$endif$
+  $math$
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+$endif$
+
+$for(css)$
+<link rel="stylesheet" href="$css$" />
+$endfor$
+</head>
+
+<body>
+
+$for(include-before)$
+$include-before$
+$endfor$
+
+$if(title)$
+$title-block.html()$
+$elseif(subtitle)$
+$title-block.html()$
+$elseif(by-author)$
+$title-block.html()$
+$elseif(date)$
+$title-block.html()$
+$elseif(categories)$
+$title-block.html()$
+$elseif(date-modified)$
+$title-block.html()$
+$elseif(doi)$
+$title-block.html()$
+$elseif(abstract)$
+$title-block.html()$
+$elseif(keywords)$
+$title-block.html()$
+$endif$
+
+
+$if(toc)$
+$toc.html()$
+$endif$
+
+$body$
+
+$for(include-after)$
+$include-after$
+$endfor$
+
+
+</body>
+
+<div class="kpi-grid">
+  <footer class="mt-5 pt-4 border-top">
+  <div class="grid footergrid py-4">
+    <!-- Contact -->
+    <div class="g-col-12 g-col-md-4">
+      $if(lang_is_da)$
+        <h5 class="fw-bold mb-2">Grønlands Statistik</h5>
+        <ul class="list-unstyled mb-3 text-muted small">
+          <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
+          <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
+          <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
+          <li class="mb-1"><i class="bi bi-clock me-2"></i>Man–Fre 09:00–15:00</li>
+        </ul>
+        <div class="small text-muted">
+          <a href="/about/" class="link-secondary me-3">Om os</a>
+          <a href="/contact/" class="link-secondary me-3">Kontakt</a>
+          <a href="/privacy/" class="link-secondary">Privatliv</a>
+        </div>
+      $elseif(lang_is_kl)$
+        <h5 class="fw-bold mb-2">Kalaallit Nunaanni Naatsorsueqqissaartarfik</h5>
+        <ul class="list-unstyled mb-3 text-muted small">
+          <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
+          <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
+          <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
+          <li class="mb-1"><i class="bi bi-clock me-2"></i>Ata–Tall 09:00–15:00</li>
+        </ul>
+        <div class="small text-muted">
+          <a href="/kl/about/" class="link-secondary me-3">Pisinnaasat pillugit</a>
+          <a href="/kl/contact/" class="link-secondary me-3">Attavissat</a>
+          <a href="/kl/privacy/" class="link-secondary">Nakkutilliineq</a>
+        </div>
+      $else$
+        <h5 class="fw-bold mb-2">Statistics Greenland</h5>
+        <ul class="list-unstyled mb-3 text-muted small">
+          <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
+          <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
+          <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
+          <li class="mb-1"><i class="bi bi-clock me-2"></i>Mon–Fri 09:00–15:00</li>
+        </ul>
+        <div class="small text-muted">
+          <a href="/en/about/" class="link-secondary me-3">About</a>
+          <a href="/en/contact/" class="link-secondary me-3">Contact</a>
+          <a href="/en/privacy/" class="link-secondary">Privacy</a>
+        </div>
+      $endif$
+    </div>
+
+    <!-- Data & tools -->
+    <div class="g-col-12 g-col-md-4">
+      $if(lang_is_da)$
+        <h5 class="fw-bold mb-2">Data & værktøjer</h5>
+        <ul class="list-unstyled text-muted mb-0">
+          <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Statistikbank</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/udgivelser/kalender/">Udgivelseskalender</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/api/">API & dokumentation</a></li>
+          <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
+        </ul>
+      $elseif(lang_is_kl)$
+        <h5 class="fw-bold mb-2">Data & sakkussat</h5>
+        <ul class="list-unstyled text-muted mb-0">
+          <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Naatsorsueqqissaarnermut toqqorsivik</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/kl/udgivelser/kalender/">Udgivisaqarnerup kalendari</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/kl/api/">API & allakkat</a></li>
+          <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
+        </ul>
+      $else$
+        <h5 class="fw-bold mb-2">Data & tools</h5>
+        <ul class="list-unstyled text-muted mb-0">
+          <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Statbank</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/en/releases/calendar/">Release calendar</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/en/api/">API & documentation</a></li>
+          <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
+        </ul>
+      $endif$
+    </div>
+
+    <!-- Map -->
+    <div class="g-col-12 g-col-md-4">
+      <div id="map" class="w-100 shadow-sm border rounded-3"></div>
+    </div>
+  </div>
+
+  <!-- Legal strip -->
+  <div class="border-top mt-4 py-3 small text-muted">
+    <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+      $if(lang_is_da)$
+        <div>© <span id="footer-year"></span> Grønlands Statistik · Data og indhold må bruges med kildeangivelse.</div>
+      $elseif(lang_is_kl)$
+        <div>© <span id="footer-year"></span> Kalaallit Nunaanni Naatsorsueqqissaartarfik · Paasissutissat atorneqarsinnaapput oqaaseqarnermik ilanngussinikkut.</div>
+      $else$
+        <div>© <span id="footer-year"></span> Statistics Greenland · Data and content may be used with attribution.</div>
+      $endif$
+      <div>CVR: 41587865</div>
+    </div>
+  </div>
+
+  <!-- Leaflet CSS/JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    #map{ width:100%; aspect-ratio:1/1; min-height:300px; }
+    .leaflet-container{ border-radius:12px; }
+    footer a.link-secondary:hover{ color:#e4572e !important; }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+      const lat = 64.17272, lng = -51.73864;
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const tiles = prefersDark
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+      const attribution = prefersDark ? '&copy; OpenStreetMap · &copy; CARTO' : '&copy; OpenStreetMap';
+
+      const map = L.map('map', { scrollWheelZoom:false }).setView([lat, lng], 17);
+      L.tileLayer(tiles, { maxZoom:18, attribution }).addTo(map);
+      L.marker([lat, lng]).addTo(map)
+        .bindPopup('<strong>Grønlands Statistik</strong><br>Sipisaq&nbsp;Avannarleq&nbsp;1, 3900&nbsp;Nuuk')
+        .openPopup();
+
+      setTimeout(() => map.invalidateSize(), 200);
+    });
+  </script>
+  </footer>
+</div>
+
+<script>
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.readmore__toggle');
+  if (!btn) return;
+  const box = btn.closest('.readmore');
+  const expanded = box.classList.toggle('expanded');
+  btn.setAttribute('aria-expanded', expanded);
+  const label = expanded ? (box.dataset.expanded || 'Show less')
+                         : (box.dataset.collapsed || 'Read more');
+  btn.title = label;
+});
+</script>
+
+
+</html>

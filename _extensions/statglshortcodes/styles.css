@@ -1,383 +1,1054 @@
-/* ========= Base tokens (plain CSS vars) ========= */
-
-/* Default colors */
+/* =========================
+   1) TOKENS & GLOBAL SCALE
+   ========================= */
 :root{
-  --brand:        darkorange;    /* accent */
-  --ink:          #1f2937;     /* primary text */
-  --ink-soft:     #6b7280;     /* secondary text */
-  --panel:        #ffffff;     /* card bg */
-  --paper:        #f7f7f8;     /* page bg bands */
+  /* Brand */
+  --brand:        #f37321;
+  --bs-primary:   var(--brand);
+
+  /* Surfaces & text (light) */
+  --ink:          #1f2937;
+  --ink-soft:     #6b7280;
+  --text:         var(--ink);
+  --text-strong:  var(--ink);
+  --muted:        var(--ink-soft);
+  --panel:        #ffffff;
+  --paper:        #f7f7f8;
   --line:         rgba(0,0,0,.08);
+  --panel-border: rgba(0,0,0,.12);
+  --hairline:     rgba(0,0,0,.08);
+
+  /* Effects & shape */
   --shadow:       0 6px 18px rgba(0,0,0,.06);
   --radius:       12px;
+
+  /* Icons */
+  --icon-lg: 3rem;
+  --icon-md: 2rem;
+
+  /* Type scale (sectioncard baseline) */
+  --fs-xs:   .85rem;
+  --fs-sm:   .95rem;
+  --fs-base: 1rem;
+  --fs-lg:   1.15rem;
+  --fs-xl:   1.25rem;
+  --fs-2xl:  clamp(1.2rem, 1vw + 1rem, 1.5rem);
+
+  /* Misc */
+  --chev-filter: invert(0) opacity(.55);
 }
 
-/* Dark-mode friendly defaults */
 @media (prefers-color-scheme: dark){
   :root{
-    --ink:        #e5e7eb;
-    --ink-soft:   #a3a3a3;
-    --panel:      #101214;
-    --paper:      #0c0d0e;
-    --line:       rgba(255,255,255,.12);
-    --shadow:     0 10px 24px rgba(0,0,0,.5);
+    --ink:          #e5e7eb;
+    --ink-soft:     #a3a3a3;
+    --text:         var(--ink);
+    --text-strong:  #fff;
+    --muted:        rgba(229,231,235,.72);
+    --panel:        #101214;
+    --paper:        #0c0d0e;
+    --line:         rgba(255,255,255,.12);
+    --panel-border: rgba(255,255,255,.12);
+    --hairline:     rgba(255,255,255,.10);
+    --shadow:       0 10px 24px rgba(0,0,0,.5);
+    --chev-filter:  invert(1) opacity(.75);
   }
   body{ background: var(--paper); }
 }
 
-/* === Global rhythm tokens === */
-:root {
-  --space-xs: 0.5rem;
-  --space-sm: 0.5rem;
-  --space-md: 0.5rem;
-  --space-lg: 3rem;
-}
-
-.navbar {
-  background-color: var(--brand);
-}
-
-/* Better defaults for text and links */
+/* =========================
+   2) BASE
+   ========================= */
 body{
-  color: var(--ink);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 a{ color: var(--brand); text-decoration: none; }
 a:hover{ text-decoration: underline; }
 
-/* ========= Hero (builds on your draft) ========= */
+.navbar{ background: var(--brand); }
+.container-xl, .container{ max-width: 1200px; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation:none !important; transition:none !important; }
+}
+
+.pub-item.card {
+  padding-bottom:1em;
+}
+
+/* =========================
+   3) HERO
+   ========================= */
 .hero-banner{
   position: relative;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,.25);
-  border-radius: 0; /* keep full-bleed feel */
+  border-radius: 0;
+  color: var(--ink);
+  background: linear-gradient(180deg, #fffaf3 0%, #fff7ed 100%);
+  opacity: 0; animation: heroFadeIn 1.5s ease-out .2s forwards;
 }
-/* overlay strength tuned for readability */
-.hero-banner{
-  background-image:
-    linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.35)),
-    var(--hero-image, url("image.png"));
-  background-size: cover;
-}
-/* Title + subtitle sizing (calm, not shouty) */
-.hero-banner h1 {
+.hero-banner h1{
   text-transform: uppercase;
   font-weight: 800;
-  letter-spacing: 0.52em;  /* subtle, adds authority */
-  line-height: 1.0;       /* slightly tighter for uppercase */
-  font-size: 0.70em; /* scales gracefully */
+  letter-spacing: .52em;
+  line-height: 1;
+  font-size: .70em;
   margin-bottom: 1.75rem;
   color: darkorange;
+  opacity: 0; transform: translateY(10px);
+  animation: titleRise 1s ease-out .9s forwards;
 }
-.hero-banner .subtle{
-  font-size: clamp(1rem, 1.8vw, 1.15rem);
-  opacity: .95;
-}
-
-.hero-banner p {
-  color: var(--ink);
-  font-size: clamp(0.95rem, 1.5vw, 1.1rem);
-  font-weight: 400;
-  opacity: 0.95;
-}
-
-/* Buttons: consistent style + focus */
+.hero-banner .subtle{ font-size: var(--fs-base); opacity: .95; }
+.hero-banner p{ color: var(--ink); font-size: var(--fs-sm); opacity: .95; }
 .hero-banner .btn{
-  padding-inline: 1.1rem;
-  padding-block: .6rem;
-  border-radius: 999px;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  padding: .6rem 1.1rem; border-radius: 999px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  opacity: 0; margin-bottom:.5rem; animation: buttonFade .8s ease-out .5s forwards;
 }
-.hero-banner .btn-primary{
-  background: var(--brand);
-  border-color: var(--brand);
-}
-.hero-banner .btn-primary:hover{
-  filter: brightness(.96);
-}
-.hero-banner .btn-secondary{
+.hero-banner .btn-primary{ background: var(--brand); border-color: var(--brand); }
+.hero-banner .btn-primary:hover{ filter: brightness(.96); }
+
+/* ✅ Secondary must be readable everywhere: white text + white outline */
+.hero-banner .btn-tertiary {
   background: transparent;
-  color: #fff;
-  border: 2px solid rgba(255,255,255,.85);
-}
-.hero-banner .btn-secondary:hover{
-  background: rgba(255,255,255,.12);
+  color: var(--ink);              /* only two dashes! */
+  border: 2px solid var(--ink);  /* specify the border style */
+  box-shadow: none;
 }
 
-/* ========= KPI cards ========= */
-/* KPI grid wrapper */
-.kpi-grid {
-  max-width: 1100px;    /* or try 1200px if you want a looser fit */
-  margin: 0 auto;       /* centers it horizontally */
-  padding-inline: 1rem; /* adds breathing room on mobile */
+@media (prefers-color-scheme: dark){
+  .hero-banner{
+    background: linear-gradient(180deg, #141619 0%, #0c0d0e 100%);
+    color: var(--ink);
+  }
+  .hero-banner h1{ color: color-mix(in srgb, var(--brand) 90%, white 10%); }
+  .hero-banner p{ color: var(--ink-soft); }
 }
 
+/* Animations */
+@keyframes heroFadeIn{ from{opacity:0} to{opacity:1} }
+@keyframes titleRise{ from{opacity:0;transform:translateY(15px)} to{opacity:1;transform:translateY(0)} }
+@keyframes buttonFade{ from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 
-.card.KeyBox {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-
+/* =========================
+   4) UNIFIED CARD SURFACE
+   ========================= */
+.card.KeyBox,
+.sectioncard,
+.link-card,
+.feature-card,
+.panel-card,
+.pub-item.card,
+.contact-card{
+  border-radius: var(--radius);
   background: var(--panel);
-  border: none;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.75rem 1rem;
-  min-height: 9rem;
-
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.card.KeyBox:hover {
-  transform: translateY(-2px);
-}
-.card.KeyBox:focus-within {
-  outline: 3px solid color-mix(in srgb, var(--brand) 40%, transparent);
-  outline-offset: 2px;
-}
-
-/* Value: big and commanding */
-.KeyValue {
-  color: var(--ink);
-  font-size: clamp(2rem, 3vw, 2.6rem);
-  font-weight: 800;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-  margin-bottom: 0.25rem;
-}
-
-/* Title: bold label */
-.KeyTitle {
-  color: var(--ink);
-  font-size: .7rem;
-  font-weight: 700;
-  text-align: center;
-  margin-bottom: 0.25rem;
-}
-
-/* Subtitle: light and secondary */
-.KeySubtitle {
-  color: var(--ink-soft);
-  font-size: 0.9rem;
-  font-weight: 400;
-  text-align: center;
-  margin: 0;
-}
-
-/* ========= Sections band ========= */
-.sections{
-  background: var(--paper);
-  padding: 2rem 0;
-}
-/* Section cards tidy + readable */
-.sectioncard{
-  border-radius: var(--radius);
   border: 1px solid var(--line);
-  background: var(--panel);
   box-shadow: var(--shadow);
-  color: inherit;
-}
-.sectioncard {
-  transition: transform .15s ease, box-shadow .15s ease;  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
 }
 
-.sectioncard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+.sectioncard:hover,
+.link-card:hover,
+.pub-item.card:hover,
+.contact-card:hover{
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  box-shadow:
+    0 6px 16px rgba(0,0,0,.10),
+    inset 0 0 0 2px color-mix(in srgb, var(--brand) 55%, transparent);
 }
 
-.sectioncard-icon {
-  font-size: 4rem; /* smaller on desktop */
+/* =========================
+   5) KPI CARDS
+   ========================= */
+.kpi-grid {
+  max-width: 900px;
+  margin-inline: auto;   /* centers the element */
+  padding: 1em;  /* vertical and horizontal padding */
+  box-sizing: border-box;        /* include padding inside the width */
+}
+.kpi-grid .grid{ gap:1.25rem; }
+.card.KeyBox{
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:1.5rem 1rem; min-height:9rem;
+}
+.KeyValue{ color:var(--ink); font-size:clamp(1.6rem,3vw,2rem); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; margin-bottom:.25rem;}
+.KeyTitle{ color:var(--ink); font-size:.7rem; font-weight:700; margin-bottom:.25rem;}
+.KeySubtitle{ color:var(--ink-soft); font-size:.9rem; }
+
+/* =========================
+   6) SECTION CARDS — ALWAYS LEFT ALIGNED
+   ========================= */
+.sections{ background: var(--paper); padding:2rem 0; }
+
+/* 🔒 No breakpoint trickery; hard left-aligned media layout */
+.sectioncard{ cursor:pointer; }
+.sectioncard .card-body{
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  text-align: left;
+  padding: 1rem 1.25rem;
+}
+.sectioncard-icon{ flex:0 0 auto; font-size: var(--icon-lg); color: var(--brand); line-height:1; }
+.sectioncard .sectioncard-textblock{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
+.section-title{ font-weight: 800; font-size: var(--fs-xl); line-height:1.2; margin:0 0 .15rem 0; color: var(--ink)}
+.sectioncard .card-text{ margin:0; font-size: var(--fs-sm); line-height:1.3; color: var(--ink-soft)}
+
+/* =========================
+   7) LINK CARDS
+   ========================= */
+.link-card{ color: var(--ink); }
+.link-card .card-title a{ color: var(--ink); font-size:.8em; font-weight:800; }
+.link-card .card-title a:hover{ text-decoration:none; }
+.link-card .card-subtitle, .link-card .card-text, .link-card .text-muted{ color: var(--ink-soft) !important; }
+.link-card i.bi{ color: var(--ink-soft); opacity:.95; }
+
+/* =========================
+   8) SHORTY / PANEL CARD
+   ========================= */
+.panel-card{
+  color: var(--text);
+}
+.panel-card .card-body{ padding: 1.25rem 1.25rem 1rem; }
+.panel-card .card-title{
+  color: var(--text-strong);
+  margin-bottom:.35rem;
+  padding-bottom:.5rem;
+  border-bottom:1px solid var(--hairline);
+}
+.panel-card .text-muted{ color: var(--muted) !important; }
+.plot-frame{ background: transparent; border: none; border-radius: 10px; padding: .25rem; }
+.plot-frame .html-widget, .plot-frame .highcharts-container, .plot-frame .highcharts-root{ height:100% !important; }
+
+/* Accordion inside panel */
+.panel-accordion .accordion-item{ border:1px solid var(--panel-border); border-radius:.5rem; overflow:hidden; }
+.panel-accordion .accordion-button{ background: var(--panel); color: var(--text); padding:.6rem 1rem; box-shadow:none; }
+.panel-accordion .accordion-button:not(.collapsed){ background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%); }
+.panel-accordion .accordion-body{ background: var(--panel); color: var(--text); border-top:1px solid var(--hairline); }
+.panel-accordion .accordion-button::after{ filter: var(--chev-filter); }
+
+/* =========================
+   9) FEATURE CARD (ICON LEFT)
+   ========================= */
+.feature-card[data-clickable="true"]{ cursor:pointer; }
+.feature-card .card-body{ text-align:left; }
+
+.feature-row{
+  display:flex;
+  align-items:center;
+  gap:1.25rem;
+  flex-wrap: nowrap;
+}
+.feature-icon{ flex-shrink:0; display:flex; align-items:flex-start; justify-content:flex-start; }
+.feature-icon i{ display:block; font-size: var(--icon-md); line-height:1; color: var(--brand); margin-top:.1rem; }
+.feature-text{ flex:1 1 auto; min-width:0; }
+
+.feature-eyebrow{ font-size:.8rem; font-weight:700; letter-spacing:.03em; color: var(--brand); margin-bottom:.15rem; }
+.feature-title{ font-size: var(--fs-2xl); font-weight:800; margin-bottom:.15rem; color: var(--text-strong); }
+.feature-subtitle{ font-size: var(--fs-sm); color: var(--ink-soft); margin-bottom:.35rem; }
+.feature-copy{ color: var(--text); }
+.feature-copy p{ margin:.4rem 0; }
+
+.feature-title a{ color: inherit !important; text-decoration: none !important; }
+.feature-title a:hover{ color: var(--brand); text-decoration: underline; }
+
+@media (max-width: 768px){
+  .feature-row{ flex-wrap: wrap; }
+  .feature-icon i{ font-size: 1.8rem; }
+}
+
+/* =========================
+   10) READMORE
+   ========================= */
+.readmore{ position: relative; }
+.readmore__content{
+  position: relative;
+  max-height: var(--readmore-height, 6rem);
+  overflow: hidden;
+  transition: max-height .35s cubic-bezier(.4,0,.2,1);
+
+  /* fade last ~40% to transparent */
+  -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.readmore:not(.expanded) .readmore__content::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:4rem; pointer-events:none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--paper), transparent 100%) 0%, color-mix(in srgb, var(--paper), transparent 10%) 60%, var(--paper) 100%);
+}
+.readmore__button-wrapper{ display:flex; justify-content:center; margin-top:.75rem; }
+.readmore__toggle{
+  border:0; background: var(--brand); color:#fff; width:2.4rem; height:2.4rem; border-radius:50%;
+  font-size:1.5rem; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  transition: transform .2s ease, background .2s ease; box-shadow: 0 2px 6px rgba(0,0,0,.12);
+}
+.readmore__toggle:hover{ background: color-mix(in srgb, #f37321, black 12%); }
+.readmore.expanded .readmore__content{
+  max-height: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.readmore.expanded .readmore__icon{ transform: rotate(45deg); }
+
+/* =========================
+   11) CONTACT CARD
+   ========================= */
+.contact-card{
+  color: var(--text);
+}
+.contact-title{ font-weight: 800; font-size: var(--fs-2xl); margin-bottom: .6rem; }
+.contact-row{ display:flex; align-items:flex-start; gap:1rem; }
+.contact-icon{ flex-shrink:0; display:flex; align-items:flex-start; justify-content:center; }
+.contact-icon i{ font-size: 2.4rem; line-height:1; color: var(--brand); margin-top:.15rem; }
+.contact-text{ flex:1; min-width:0; }
+.contact-name{ font-weight:700; margin-bottom:.15rem; color: var(--ink)}
+.contact-role{ color: var(--ink-soft); font-weight:600; }
+.contact-lines{ list-style:none; padding:0; margin:.25rem 0 0; }
+.contact-line{ display:flex; align-items:baseline; gap:.25rem; color: var(--text); margin:.2rem 0; }
+.contact-line i{ color: var(--ink-soft); }
+.contact-line a{ color: var(--brand); text-decoration:none; }
+.contact-line a:hover{ text-decoration: underline; }
+@media (max-width:520px){ .contact-icon i{ font-size:2rem; } }
+
+/* space between any two .card siblings */
+.card + .card { margin-top: 1rem; }
+
+/* =========================
+   12) PUBLICATION CALENDAR
+   ========================= */
+.pub-list{ display:flex; flex-direction:column; gap:.5rem; }
+
+/* Card */
+.pub-item.card{
+  --bs-card-spacer-y: .5rem;
+  --bs-card-spacer-x: .75rem;
+}
+
+/* Inner row */
+.pub-item.card .card-body.pub-row{
+  display:grid;
+  grid-template-columns: 2.8rem 1fr;   /* date | text */
+  align-items:center;
+  gap:.75rem;
+  padding:0;
+  line-height:1.2;
+}
+
+/* Date */
+.pub-datebox{
+  width:2.8rem; text-align:center; line-height:1.05;
+}
+.pub-datebox .day{ font-weight:800; font-size:1.05rem; margin:0; color: var(--brand); }
+.pub-datebox .mon{ font-weight:700; font-size:.7rem; text-transform:uppercase; opacity:.75; margin:0; color: var(--muted); }
+
+/* Text */
+.pub-text{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
+.pub-title{ margin:0; font-weight:700; font-size: var(--fs-base); line-height:1.25; color: var(--text-strong); }
+.pub-domain{ margin:0; font-size:.85rem; color: var(--muted); }
+
+/* Footer link */
+.pub-footer{ display:flex; justify-content:flex-end; margin-top:.75rem; }
+.pub-more{ font-weight:600; font-size:.95rem; text-decoration:none; color: var(--brand); }
+.pub-more:hover{ color: color-mix(in srgb, var(--brand) 85%, white 15%); text-decoration: underline; }
+@media (prefers-color-scheme: dark){
+  .pub-more:hover{ color: color-mix(in srgb, var(--brand) 85%, black 15%); }
+}
+
+/* Phone tweaks */
+@media (max-width:576px){
+  .pub-item.card .card-body.pub-row{ grid-template-columns: 2.4rem 1fr; gap:.6rem; }
+  .pub-datebox{ width:2.4rem; }
+  .pub-title{ font-size:.98rem; }
+}
+
+/* =========================
+   13) UTILITIES & MISC
+   ========================= */
+.row.g-3{ --bs-gutter-x:1rem; --bs-gutter-y:1rem; }
+.grid.g-3{ gap:1rem; }
+#quarto-content>*{ padding-top:14px; }
+#map{ border-radius:12px; max-height:70px; }
+.footergrid{ max-width:1100px; margin-inline:auto; padding: var(--space-md) var(--space-sm); background: var(--panel); border-radius:12px; }
+.sidebar nav[role=doc-toc] ul>li>a.active,
+.sidebar nav[role=doc-toc] ul>li>ul>li>a.active{ border-left:1px solid var(--brand); color: var(--brand) !important; }
+.sidebar nav[role=doc-toc] ul>li>a:hover,
+.sidebar nav[role=doc-toc] ul>li>ul>li>a:hover{ color: var(--brand) !important; }
+
+
+/* =========================
+   Feature "harmonica" / accordion
+   ========================= */
+
+/* place + seam inside the card */
+.feature-card .feature-accordion{
+  margin: 0;                               /* hug the card edges */
+  border-top: 1px solid var(--hairline);   /* subtle seam from body */
+  overflow: hidden;                        /* keep rounded corners */
+  background: var(--panel);
+  border-color: var(--ink-soft);
+}
+
+/* items share the card’s chrome */
+.feature-accordion .accordion-item{
+  background: transparent;
+  border: 0;
+}
+.feature-accordion .accordion-item + .accordion-item{
+  border-top: 1px solid var(--hairline);
+}
+
+/* header button */
+.feature-accordion .accordion-button{
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 700;
+  font-size: var(--fs-base);
+  padding: .6rem .9rem;
+  box-shadow: none;
+}
+.feature-accordion .accordion-button:hover{
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+}
+.feature-accordion .accordion-button:not(.collapsed){
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+  color: var(--text-strong);
+}
+.feature-accordion .accordion-button:focus{
+  box-shadow: 0 0 0 .18rem color-mix(in srgb, var(--brand) 28%, transparent);
+}
+
+/* chevron uses token so it flips in dark mode */
+.feature-accordion .accordion-button::after{
+  filter: var(--chev-filter);
+}
+
+/* panel body */
+.feature-accordion .accordion-body{
+  background: var(--panel);
+  color: var(--text);
+  padding: .75rem .9rem .9rem;
+  border-top: 1px solid var(--hairline);
+  line-height: 1.45;
+}
+
+/* dark-mode keeps same tokens; no extra rules required */
+@media (prefers-color-scheme: dark){
+  /* optional: make the opened header a touch stronger in dark */
+  .feature-accordion .accordion-button:not(.collapsed){
+    background: color-mix(in srgb, var(--panel) 88%, var(--brand) 12%);
+  }
+}
+
+/* === Make feature accordion match shorty/panel defaults === */
+.feature-accordion{
+  /* same frame as .panel-accordion */
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: .5rem;
+  overflow: hidden;
+
+  /* same outer spacing you used on shorty */
+}
+
+/* identical item seams */
+.feature-accordion .accordion-item{
+  background: var(--panel);
+  border: 0;                /* Bootstrap reset */
+}
+.feature-accordion .accordion-item + .accordion-item{
+  border-top: 1px solid var(--hairline);
+}
+
+/* header button (copy of panel-accordion) */
+.feature-accordion .accordion-button{
+  background: var(--panel);
+  color: var(--text);
+  padding: .6rem 1rem;
+  box-shadow: none;
+}
+.feature-accordion .accordion-button:not(.collapsed){
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+}
+.feature-accordion .accordion-button:focus{
+  box-shadow: none;
+}
+.feature-accordion .accordion-button::after{
+  filter: var(--chev-filter);
+}
+
+/* body (copy of panel-accordion) */
+.feature-accordion .accordion-body{
+  background: var(--panel);
+  color: var(--text);
+  padding: .75rem 1rem .9rem;
+  border-top: 1px solid var(--hairline);
+}
+
+/* optional: thin seam between card body and accordion */
+.feature-card .feature-accordion{
+  /* if you like the faint divider under charts/text */
+  box-shadow: 0 -1px 0 0 var(--hairline) inset;
+}
+
+/* === Minimal outline style for feature accordion === */
+.feature-accordion{
+  border: 1px solid var(--hairline);
+  border-radius: .5rem;
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Each item shares the same outline container */
+.feature-accordion .accordion-item{
+  border: 0;
+  background: transparent;
+}
+
+/* Header button — subtle outline look */
+.feature-accordion .accordion-button{
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-size: .95rem;
+  padding: .55rem .9rem;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+}
+
+/* Hover and open states — faint panel tint */
+.feature-accordion .accordion-button:hover{
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+}
+.feature-accordion .accordion-button:not(.collapsed){
+  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
+  color: var(--text-strong);
+}
+
+/* Chevron */
+.feature-accordion .accordion-button::after{
+  filter: var(--chev-filter);
+}
+
+/* Body content */
+.feature-accordion .accordion-body{
+  background: transparent;
+  color: var(--text);
+  border-top: 1px solid var(--hairline);
+  padding: .75rem .9rem .9rem;
+  line-height: 1.45;
+}
+
+/* Dark mode: soft white outline */
+@media (prefers-color-scheme: dark){
+  .feature-accordion{
+    border-color: rgba(255,255,255,.25);
+  }
+  .feature-accordion .accordion-button:hover{
+    background: rgba(255,255,255,.04);
+  }
+  .feature-accordion .accordion-button:not(.collapsed){
+    background: rgba(255,255,255,.08);
+  }
+}
+
+/* === Harmonized feature accordion (matches shorty spacing) === */
+.feature-accordion{
+  border: 1px solid var(--hairline);
+  border-radius: .5rem;
+  background: transparent;
+  margin: 1rem 1rem 1.25rem;   /* same inset as shorty */
+  overflow: hidden;
+}
+
+/* Each item shares the same outline container */
+.feature-accordion .accordion-item{
+  border: 0;
+  background: transparent;
+}
+
+/* Header button — same padding and rhythm as shorty */
+.feature-accordion .accordion-button{
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-size: .95rem;
+  padding: .75rem 1.25rem;      /* <-- this was missing */
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+}
+.feature-accordion .accordion-button:hover{
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+}
+.feature-accordion .accordion-button:not(.collapsed){
+  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
+  color: var(--text-strong);
+}
+
+/* Chevron styling */
+.feature-accordion .accordion-button::after{
+  filter: var(--chev-filter);
+}
+
+/* Body — same inset + vertical rhythm as shorty */
+.feature-accordion .accordion-body{
+  background: transparent;
+  color: var(--text);
+  border-top: 1px solid var(--hairline);
+  padding: .85rem 1.25rem 1rem; /* aligned with header */
+  line-height: 1.45;
+}
+
+/* Dark mode: same outline softness */
+@media (prefers-color-scheme: dark){
+  .feature-accordion{
+    border-color: rgba(255,255,255,.25);
+  }
+  .feature-accordion .accordion-button:hover{
+    background: rgba(255,255,255,.04);
+  }
+  .feature-accordion .accordion-button:not(.collapsed){
+    background: rgba(255,255,255,.08);
+  }
+}
+
+/* === Harmonized feature accordion (matches shorty spacing) === */
+.feature-accordion{
+  border: 1px solid var(--hairline);
+  border-radius: .5rem;
+  background: transparent;
+  margin: 1rem 1rem 1.25rem;   /* same inset as shorty */
+  overflow: hidden;
+}
+
+/* Each item shares the same outline container */
+.feature-accordion .accordion-item{
+  border: 0;
+  background: transparent;
+}
+
+/* Header button — same padding and rhythm as shorty */
+.feature-accordion .accordion-button{
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  font-size: .95rem;
+  padding: .75rem 1.25rem;      /* <-- this was missing */
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+}
+.feature-accordion .accordion-button:hover{
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+}
+.feature-accordion .accordion-button:not(.collapsed){
+  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
+  color: var(--text-strong);
+}
+
+/* Chevron styling */
+.feature-accordion .accordion-button::after{
+  filter: var(--chev-filter);
+}
+
+/* Body — same inset + vertical rhythm as shorty */
+.feature-accordion .accordion-body{
+  background: transparent;
+  color: var(--text);
+  border-top: 1px solid var(--hairline);
+  padding: .85rem 1.25rem 1rem; /* aligned with header */
+  line-height: 1.45;
+}
+
+/* Dark mode: same outline softness */
+@media (prefers-color-scheme: dark){
+  .feature-accordion{
+    border-color: rgba(255,255,255,.25);
+  }
+  .feature-accordion .accordion-button:hover{
+    background: rgba(255,255,255,.04);
+  }
+  .feature-accordion .accordion-button:not(.collapsed){
+    background: rgba(255,255,255,.08);
+  }
+}
+
+.feature-card .feature-accordion {
+    margin: 1.25rem 1.25rem 1rem;
+}
+
+/* === Fix feature card icon alignment === */
+.feature-card .card-body {
+  padding: 1.25rem 1.25rem 1rem;
+}
+
+.feature-card .fx-row {
+  display: flex;
+  flex-direction: row;        /* always horizontal */
+  align-items: flex-start;    /* top-align icon and text */
+  gap: 1rem;                  /* nice breathing space */
+}
+
+/* icon/media column */
+.feature-card .fx-media {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;    /* align icon to top */
+  justify-content: center;
+  width: auto;                /* don't force width */
+}
+
+.feature-card .fx-media i {
+  font-size: 2rem;
+  line-height: 1;
   color: var(--brand);
 }
 
-/* Mobile layout */
-@media (max-width: 768px) {
-  .sectioncard .card-body {
-    flex-direction: row !important;
-    text-align: left !important;
-    align-items: center !important;
+/* text column */
+.feature-card .fx-text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+/* mobile stays side-by-side too (no wrapping) */
+@media (max-width: 576px) {
+  .feature-card .fx-row {
+    flex-wrap: nowrap;
   }
-
-  .sectioncard-icon {
-    font-size: 3rem;
-    margin-right: 1rem;
-    margin-bottom: 0 !important;
-  }
-
-  .sectioncard-text {
-    flex: 1;
-  }
-}
-
-/* Slightly tighter spacing and typography */
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.sectioncard .card-text {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.3;
-}
-
-/* ========= Small rhythm tweaks ========= */
-.row.g-3{ --bs-gutter-x: 1rem; --bs-gutter-y: 1rem; }
-.grid.g-3{ gap: 1rem; }
-.container-xl, .container{
-  max-width: 1200px;
-}
-p{ margin: .5rem 0 .75rem; }
-
-/* ========= Motion respect ========= */
-@media (prefers-reduced-motion: reduce){
-  *{ animation: none !important; transition: none !important; }
-}
-
-/* === HERO section === */
-
-/* --- Hero base fade-in --- */
-.hero-banner {
-  opacity: 0;
-  animation: heroFadeIn 1.5s ease-out forwards;
-  animation-delay: 0.2s;
-}
-
-@keyframes heroFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* --- Logo: fade + gentle rise --- */
-.hero-logo {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: logoRise 1.2s ease-out forwards;
-  animation-delay: 0.6s;
-}
-
-@keyframes logoRise {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .feature-card .fx-media i {
+    font-size: 1.75rem;
   }
 }
 
-/* --- Title: fade + slight upward motion --- */
-.hero-banner h1 {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: titleRise 1s ease-out forwards;
-  animation-delay: 0.9s;
-}
 
-@keyframes titleRise {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
+/* PHONE (≤576px) — icon left, text right */
+@media (max-width: 576px){
+  .sectioncard .card-body{
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:1rem !important;
+    text-align:left !important;
+    padding:1rem 1.25rem !important;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .sectioncard .sectioncard-icon{ font-size:2rem !important; margin:0 !important; }
+  .sectioncard .sectioncard-textblock{
+    flex:1 1 auto; min-width:0;
+    display:flex; flex-direction:column; align-items:flex-start; text-align:left !important;
   }
 }
 
-/* --- Optional: fade-in of subtitle/text --- */
-.hero-banner p,
-.hero-banner br + text {
-  opacity: 0;
-  animation: subtitleFade 1s ease-out forwards;
-  animation-delay: 0.1s;
+/* TABLET & DESKTOP (≥577px) — centered stack, regardless of markup */
+@media (min-width: 577px){
+  .sectioncard .card-body,
+  .link-cards .sectioncard .card-body{  /* guard against listing styles */
+    display:flex !important;
+    flex-direction:column !important;
+    align-items:center !important;
+    justify-content:center !important;
+    text-align:center !important;
+    gap:.35rem !important;
+    padding:1.25rem 1.5rem !important;
+  }
+
+  /* support both old (.sectioncard-icon) and new (.sc-icon .bi) markups */
+  .sectioncard .sectioncard-icon,
+  .sectioncard .sc-icon .bi{
+    font-size:3rem !important;
+    line-height:1;
+    margin:0 0 .25rem 0 !important;
+  }
+
+  .sectioncard .sectioncard-textblock,
+  .sectioncard .sc-copy{
+    display:flex; flex-direction:column;
+    align-items:center !important;
+    text-align:center !important;
+  }
 }
 
-@keyframes subtitleFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Fix long text overflow in link cards */
+.link-card,
+.link-card .card-body,
+.link-card .card-title,
+.link-card .card-subtitle,
+.link-card .card-text {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;            /* gives natural hyphenation when possible */
 }
 
-/* --- Buttons appear last --- */
-.hero-banner .btn {
-  opacity: 0;
-  margin-bottom: 0.5rem;
-  animation: buttonFade 0.8s ease-out forwards;
-  animation-delay: 0.5s;
+.card-title > p {
+  margin-bottom: 0;
 }
 
-@keyframes buttonFade {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+.link-card i.bi {
+  color: var(--brand);
 }
-
-/* === KPI wrapper === */
-.kpi-grid {
-  max-width: 1100px;
-  margin-inline: auto;
-  padding: var(--space-md) var(--space-sm);
-}
-
-/* Grid spacing (horizontal + vertical gaps) */
-.kpi-grid .grid {
-  gap: 1.25rem;
-}
-
-/* Slight separation between hero and KPI block */
-.hero-banner + .kpi-grid {
-  margin-top: var(--space-md);
-}
-
-/* === KPI cards === */
-.card.KeyBox {
-  padding: 1.5rem 1rem;
-  border-radius: 0.75rem;
-  text-align: center;
-  animation: buttonFade 0.8s ease-out forwards;
-
-}
-
-/* === Sections wrapper === */
-.sections {
-  background: var(--paper, #f7f7f8);
-  padding: var(--space-lg) var(--space-sm);
-  margin-top: var(--space-md);
-}
-
-.sections .grid {
-  gap: 1.5rem;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-/* === Section cards === */
-.sectioncard {
-  padding: 1rem;
-  border-radius: 0.75rem;
-  animation: buttonFade 0.4s ease-out forwards;
-
-}
-
-#quarto-content>* {
-    padding-top: 14px;
-}
-
-#map {
-   border-radius: 12px;
-   max-height: 70px;
- }
 
 .footergrid {
-  max-width: 1100px;
-  margin-inline: auto;
-  padding: var(--space-md) var(--space-sm);
+  margin: 1em;
+  padding: 1em;
+}
+
+/* Keep wide tables inside the card with horizontal scroll */
+.panel-card .card-body table,
+.shorty .card-body table,
+.panel-card .card-body .table,
+.shorty .card-body .table{
+  display: block;               /* allows overflow on the element itself */
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;             /* horizontal scroll if needed */
+  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
+  border-collapse: collapse;    /* avoid phantom extra width */
+}
+
+/* Optional: keep cells on one line so the table doesn’t wrap to 10 lines */
+.panel-card .card-body table th,
+.panel-card .card-body table td,
+.shorty .card-body table th,
+.shorty .card-body table td{
+  white-space: nowrap;
+}
+
+/* Optional: subtle hint there’s more to scroll */
+.panel-card .card-body table::after,
+.shorty .card-body table::after{
+  content: "";
+  position: sticky;
+  right: 0; top: 0; bottom: 0;
+  width: 12px;
+  pointer-events: none;
+  background: linear-gradient(to left, var(--panel), transparent);
+}
+
+.feature-card + p {
+  margin-top: 1em;
+}
+
+
+
+h3, .h3 {
+    font-weight: 500;
+    color: var(--brand);
+}
+
+/* Base look (light & dark) */
+.cardish-accordion {
+  --acc-pad-x: 1rem;
+  --acc-pad-y: 0.875rem;
+
+  .accordion-item { border: 0; background: transparent; }
+
+  .accordion-button {
+    background: transparent;
+    box-shadow: none !important;
+    border-radius: var(--bs-border-radius-xxl) var(--bs-border-radius-xxl) 0 0;
+    padding: var(--acc-pad-y) var(--acc-pad-x);
+    font-weight: 700;
+    color: var(--bs-body-color);
+  }
+  .accordion-button:not(.collapsed) {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    color: var(--bs-primary);
+  }
+
+  .accordion-body { padding: 0 var(--acc-pad-x) var(--acc-pad-y); }
+
+  .archive-item {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .5rem 0;
+    border-top: 1px solid var(--bs-border-color-translucent);
+  }
+  .archive-item:first-child { border-top: 0; }
+
+  .archive-item i.bi { font-size: 1.1rem; opacity: .9; color: var(--bs-danger); }
+
+  /* 🔒 Kill Bootstrap's default blue link in this component */
+  .archive-item a,
+  .archive-item a:visited {
+    color: inherit;               /* inherit card text color */
+    text-decoration: none;
+  }
+  .archive-item a:hover {
+    color: var(--bs-primary);     /* tasteful hover */
+    text-decoration: underline;
+  }
+}
+
+/* Dark mode — support both Bootstrap 5 data attr and Quarto's .quarto-dark */
+[data-bs-theme="dark"] .cardish-accordion,
+.quarto-dark .cardish-accordion {
+  .accordion-button { color: var(--bs-body-color); background: transparent; }
+  .accordion-button:not(.collapsed) {
+    background-color: rgba(var(--bs-primary-rgb), 0.12);
+    color: var(--bs-primary);
+  }
+  .accordion-body { background: transparent; }
+  .archive-item { border-color: var(--bs-border-color-translucent, rgba(255,255,255,.15)); }
+  .archive-item i.bi { color: #ff6b6b; }  /* gentle red that reads on dark */
+}
+
+/* Smooth theme toggle (optional) */
+.cardish-accordion, .cardish-accordion * {
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+/* Archive card should always use the card's themed colors */
+.card-archive {
+  /* Make inner bits inherit the card palette */
+  color: var(--bs-card-color);
   background-color: var(--panel);
-  border-radius: 12px;
-  padding: 1.5em;
+
+  .cardish-accordion {
+    /* Buttons/headers */
+    .accordion-button {
+      background-color: var(--panel) !important; /* kill default white */
+      color: var(--ink) !important;
+      box-shadow: none !important;
+    }
+    .accordion-button:not(.collapsed) {
+      /* subtle tint when open (works in both themes) */
+      background-color: color-mix(in oklab, var(--bs-primary) 10%, var(--bs-card-bg)) !important;
+      color: var(--bs-primary) !important;
+
+    }
+
+    /* Body inherits the card background */
+    .accordion-body {
+      background-color: var(--panel) !important;
+      color: var(--ink) !important;
+    }
+
+    /* List items + borders that adapt to theme */
+    .archive-item {
+      display: flex; align-items: center; gap: .5rem;
+      padding: .5rem 0;
+      border-top: 1px solid var(--bs-card-border-color, var(--bs-border-color));
+    }
+    .archive-item:first-child { border-top: 0; }
+
+    /* Icon and links */
+    .archive-item i.bi { font-size: 1.05rem; color: var(--bs-danger); opacity: .9; }
+    .archive-item a,
+    .archive-item a:visited { color: inherit; text-decoration: none; }
+    .archive-item a:hover   { color: var(--bs-primary); text-decoration: underline; }
+  }
+}
+
+/* Ensure it flips in all dark-mode setups (Bootstrap attr + Quarto class).
+   Using CSS variables means we usually don't need extra overrides here,
+   but these increase specificity if your theme is stubborn. */
+[data-bs-theme="dark"] .card-archive,
+.quarto-dark .card-archive {
+  .cardish-accordion .archive-item { 
+    border-top-color: var(--bs-card-border-color, rgba(255,255,255,.15)) !important;
+  }
+}
+
+.card-body {
+    flex: 1 1 auto;
+    -webkit-flex: 1 1 auto;
+    padding: var(--bs-card-spacer-y) var(--bs-card-spacer-x);
+    color: var(--ink);
+}
+
+.accordion-body {
+  background-color: var(--panel);
+  color: var(--ink);
+}
+/* External link card — compact, responsive, wraps text properly */
+.externcard {
+  border-radius: var(--bs-border-radius-xxl);
+  background-color: var(--bs-card-bg);
+  color: var(--bs-card-color);
+  height: auto;
+  align-self: start;
+  max-width: 100%;
+  position: relative;
+
+  .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+  }
+
+  /* Left side: icon + text stack */
+  .d-flex.align-items-center.gap-3.min-w-0 {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .externcard-icon {
+    font-size: 1.5rem;
+    color: var(--bs-primary);
+    flex-shrink: 0;
+  }
+
+  .min-w-0 {
+    min-width: 0;
+  }
+
+  .externcard-title {
+    font-weight: 700;
+    font-size: 1rem;
+    line-height: 1.2;
+    margin: 0;
+    color: var(--bs-body-color);
+    word-break: break-word;
+  }
+
+  .externcard-subtitle {
+    font-size: 0.9rem;
+    margin: 0;
+    color: var(--bs-secondary-color, #6c757d);
+    word-break: break-word;
+  }
+
+  /* Arrow always hugs the right */
+  .externcard-chevron {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    color: var(--bs-primary);
+    margin-left: 0.5rem;
+  }
+
+  a.stretched-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &:hover,
+  &:focus-within {
+    box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.2);
+  }
+}
+
+/* Responsive tweaks */
+@media (max-width: 576px) {
+  .externcard .card-body {
+    padding: 0.75rem 1rem;
+    gap: 0.75rem;
+  }
+  .externcard .externcard-icon { font-size: 1.35rem; }
+  .externcard .externcard-chevron { font-size: 1.1rem; }
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .externcard,
+.quarto-dark .externcard {
+  .externcard-subtitle { color: var(--bs-secondary-color, #adb5bd); }
 }
