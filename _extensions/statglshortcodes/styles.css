@@ -3,7 +3,7 @@
    ========================= */
 :root{
   /* Brand */
-  --brand:        #f37321;
+  --brand:        #007F99;
   --bs-primary:   var(--brand);
 
   /* Surfaces & text (light) */
@@ -76,6 +76,7 @@ a:hover{ text-decoration: underline; }
 
 .pub-item.card {
   padding-bottom:1em;
+  padding-left:1.1em;
 }
 
 /* =========================
@@ -85,7 +86,7 @@ a:hover{ text-decoration: underline; }
   position: relative;
   border-radius: 0;
   color: var(--ink);
-  background: linear-gradient(180deg, #fffaf3 0%, #fff7ed 100%);
+  background: linear-gradient(180deg, lightblue 0%, var(--panel) 100%);
   opacity: 0; animation: heroFadeIn 1.5s ease-out .2s forwards;
 }
 .hero-banner h1{
@@ -95,7 +96,7 @@ a:hover{ text-decoration: underline; }
   line-height: 1;
   font-size: .70em;
   margin-bottom: 1.75rem;
-  color: darkorange;
+  color: var(--brand);
   opacity: 0; transform: translateY(10px);
   animation: titleRise 1s ease-out .9s forwards;
 }
@@ -193,7 +194,7 @@ a:hover{ text-decoration: underline; }
 }
 .sectioncard-icon{ flex:0 0 auto; font-size: var(--icon-lg); color: var(--brand); line-height:1; }
 .sectioncard .sectioncard-textblock{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
-.section-title{ font-weight: 800; font-size: var(--fs-xl); line-height:1.2; margin:0 0 .15rem 0; color: var(--ink)}
+.section-title{ font-weight: 800; font-size: var(--fs-lg); line-height:1.2; margin:0 0 .15rem 0; color: var(--ink)}
 .sectioncard .card-text{ margin:0; font-size: var(--fs-sm); line-height:1.3; color: var(--ink-soft)}
 
 /* =========================
@@ -276,7 +277,7 @@ a:hover{ text-decoration: underline; }
 
 .readmore:not(.expanded) .readmore__content::after{
   content:""; position:absolute; left:0; right:0; bottom:0; height:4rem; pointer-events:none;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--paper), transparent 100%) 0%, color-mix(in srgb, var(--paper), transparent 10%) 60%, var(--paper) 100%);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--panel), transparent 100%) 0%, color-mix(in srgb, var(--panel), transparent 10%) 60%, var(--panel) 100%);
 }
 .readmore__button-wrapper{ display:flex; justify-content:center; margin-top:.75rem; }
 .readmore__toggle{
@@ -314,6 +315,7 @@ a:hover{ text-decoration: underline; }
 
 /* space between any two .card siblings */
 .card + .card { margin-top: 1rem; }
+.grid + .card { margin-top: 1rem; }
 
 /* =========================
    12) PUBLICATION CALENDAR
@@ -677,7 +679,8 @@ a:hover{ text-decoration: underline; }
 }
 
 .feature-card .feature-accordion {
-    margin: 1.25rem 1.25rem 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 /* === Fix feature card icon alignment === */
@@ -1051,4 +1054,144 @@ h3, .h3 {
 [data-bs-theme="dark"] .externcard,
 .quarto-dark .externcard {
   .externcard-subtitle { color: var(--bs-secondary-color, #adb5bd); }
+}
+
+.externcard + p {
+  margin: 1em;
+}
+
+.title {
+  color: var(--brand)
+}
+
+.card.KeyBox,
+.sectioncard,
+.link-card,
+.feature-card,
+.panel-card,
+.pub-item.card,
+.contact-card{
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.form-label, .shiny-input-container .control-label {
+    margin-top: .5rem;
+    margin-bottom: .5rem;
+}
+
+/* Make sure select text is actually visible everywhere */
+.form-select,
+.form-select option {
+  color: var(--ink) !important;
+}
+
+/* Dark mode variant, if needed */
+@media (prefers-color-scheme: dark){
+  .form-select,
+  .form-select option {
+    color: var(--ink) !important;
+    background-color: var(--panel);
+  }
+}
+
+.meta {
+  white-space: normal;
+}
+
+/* =========================
+   Dark mode footer fix
+   ========================= */
+/* =========================
+   Unified dark footer colors
+   ========================= */
+:root.dark {
+  /* Base text */
+  --footer-text: #c7cbd3;        /* soft, readable gray */
+  --footer-muted: #a6acb4;       /* slightly dimmer */
+  --footer-link: #d3d7df;        /* same as text, but can underline */
+  --footer-icon: #d3d7df;
+
+  /* Borders */
+  --footer-line: rgba(255,255,255,0.12);
+}
+
+/* Apply it to the whole footer */
+footer {
+  color: var(--footer-text);
+  font-size: 0.95rem;
+}
+
+footer .text-muted,
+footer small,
+footer ul,
+footer li {
+  color: var(--footer-muted) !important;
+}
+
+/* Links in footer */
+footer a,
+footer a.link-secondary {
+  color: var(--footer-link) !important;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* Icons */
+footer i {
+  color: var(--footer-icon) !important;
+}
+
+/* Borders */
+footer .border-top {
+  border-top-color: var(--footer-line) !important;
+}
+
+footer h5 {
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+}
+
+
+footer small,
+footer .text-muted,
+footer ul,
+footer li {
+  font-size: 0.80rem !important;
+  line-height: 1.4;
+}
+
+footer li i.bi {
+  width: 1.4rem;      /* fixed width for all icons */
+  display: inline-block;
+  text-align: center; /* keeps icons centered in their box */
+}
+
+/* Normalize footer list layout */
+footer li.footer-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Fixed-width icons so every line aligns */
+footer li.footer-item i.bi {
+  flex: 0 0 1.4rem; /* adjust if needed */
+  text-align: center;
+  margin-top: .15rem; /* visually centers */
+}
+
+/* Make the two-line address indent align perfectly */
+footer .footer-address {
+  display: inline-block;
+}
+
+/* Optional: tighten line-height for multi-line items */
+footer li.footer-item {
+  line-height: 1.3;
 }
