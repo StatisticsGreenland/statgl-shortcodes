@@ -27,24 +27,6 @@ end
   return pandoc.RawBlock("html", html)
 end
 
-function datawrapper(args, kwargs)
-  local id = kwargs["id"]
-  local height = kwargs["height"] or "400px"
-
-  if not id then
-    error("Missing required argument: id")
-  end
-
-  local html = string.format([[
-    <div style="min-height:%s" id="datawrapper-vis-%s">
-      <script type="text/javascript" defer src="https://datawrapper.dwcdn.net/%s/embed.js" charset="utf-8" data-target="#datawrapper-vis-%s"></script>
-      <noscript><img src="https://datawrapper.dwcdn.net/%s/full.png" alt="" /></noscript>
-    </div>
-  ]], height, id, id, id, id)
-
-  return pandoc.RawBlock("html", html)
-end
-
 function sectioncard(args, kwargs, meta)
   local U     = pandoc.utils.stringify
   local icon  = U(kwargs["icon"]  or "bi-box")
@@ -84,16 +66,22 @@ function shorty(args, kwargs, meta)
   local title           = utils.stringify(kwargs["title"] or "")
   local subtitle        = utils.stringify(kwargs["subtitle"] or "")
   local description     = utils.stringify(kwargs["description"] or "")
+
+  -- plot 1
   local plot_title      = utils.stringify(kwargs["plot_title"] or "")
   local plot_subtitle   = utils.stringify(kwargs["plot_subtitle"] or "")
   local plot_html       = utils.stringify(kwargs["plot"] or "")
   local plot_link       = utils.stringify(kwargs["plot_link"] or "")
   local plot_height     = utils.stringify(kwargs["plot_height"] or "300px")
+
+  -- plot 2
+  local plot2_title     = utils.stringify(kwargs["plot2_title"] or "")
+  local plot2_subtitle  = utils.stringify(kwargs["plot2_subtitle"] or "")
+  local plot2_html      = utils.stringify(kwargs["plot2"] or "")
+  local plot2_link      = utils.stringify(kwargs["plot2_link"] or "")
+  local plot2_height    = utils.stringify(kwargs["plot2_height"] or plot_height)
+
   local img             = utils.stringify(kwargs["img"] or "")
-  local tbl_title       = utils.stringify(kwargs["tbl_title"] or "")
-  local tbl_subtitle    = utils.stringify(kwargs["tbl_subtitle"] or "")
-  local tbl             = utils.stringify(kwargs["tbl"] or "")
-  local tbl_link        = utils.stringify(kwargs["tbl_link"] or "")
   local accordion_title = utils.stringify(kwargs["accordion"] or "Mere")
   local more_raw        = utils.stringify(kwargs["more"] or "")
 
@@ -112,20 +100,30 @@ function shorty(args, kwargs, meta)
     local pat = "^" .. string.rep(" ", minindent)
     return (s:gsub("\r\n", "\n"):gsub("\n" .. pat, "\n"):gsub("^" .. pat, ""))
   end
-  
-  -- allow generic 'link' as shorthand for plot_link
+
+  -- allow generic 'link' and 'link2' shorthands
   if plot_link == "" then
     local generic_link = utils.stringify(kwargs["link"] or "")
     if generic_link ~= "" then plot_link = generic_link end
   end
+  if plot2_link == "" then
+    local generic_link2 = utils.stringify(kwargs["link2"] or "")
+    if generic_link2 ~= "" then plot2_link = generic_link2 end
+  end
 
   -- clean plot html (correct raw-HTML fence + whitespace)
-  plot_html = plot_html
-    :gsub("`{=html}", "")
-    :gsub("`", "")
-    :gsub("^%s+", "")
-    :gsub("%s+$", "")
-  plot_html = plot_html:gsub("^%s*<p>(.*)</p>%s*$", "%1")
+  local function clean_plot_html(html)
+    html = html
+      :gsub("`{=html}", "")
+      :gsub("`", "")
+      :gsub("^%s+", "")
+      :gsub("%s+$", "")
+    html = html:gsub("^%s*<p>(.*)</p>%s*$", "%1")
+    return html
+  end
+
+  plot_html  = clean_plot_html(plot_html)
+  plot2_html = clean_plot_html(plot2_html)
 
   -- description -> html (strip outer <p>)
   local description_html = ""
@@ -134,11 +132,12 @@ function shorty(args, kwargs, meta)
     description_html = description_html:gsub("^<p>(.*)</p>\n?$", "%1")
   end
 
+  -- turn links into small html spans
   if plot_link ~= "" then
     plot_link = md_to_html('<span style="font-size:0.7em;">' .. plot_link .. '</span>')
   end
-  if tbl_link ~= "" then
-    tbl_link = md_to_html('<span style="font-size:0.7em;">' .. tbl_link .. '</span>')
+  if plot2_link ~= "" then
+    plot2_link = md_to_html('<span style="font-size:0.7em;">' .. plot2_link .. '</span>')
   end
 
   -- extra links link_*
@@ -162,12 +161,12 @@ function shorty(args, kwargs, meta)
       :gsub("\\\\§\\\\§", "\n\n")  -- \§\§ (double backslashes after Lua escaping)
       :gsub("\\§\\§",   "\n\n")    -- edge cases
       :gsub("§§",       "\n\n")    -- plain §§
-  
+
     -- hard line breaks
     more_md = more_md
       :gsub("\\\\§", "  \n")       -- \§
       :gsub("\\§",   "  \n")       -- edge cases
-  
+
     more_md = trim(more_md)
     more_html = md_to_html(more_md)
   end
@@ -206,31 +205,34 @@ function shorty(args, kwargs, meta)
     end
   end
 
-  local has_plot = (plot_title ~= "" or plot_html ~= "" or plot_link ~= "")
-  local has_tbl  = (tbl_title  ~= "" or tbl       ~= "" or tbl_link  ~= "")
-  local has_img  = (img ~= "")
+  -- ---------- plot builder (lazy render with native animation)
+  local function build_plot_block(ptitle, psubtitle, phtml, plink, pheight)
+    local has_content = (ptitle ~= "" or phtml ~= "" or plink ~= "")
+    if not has_content then return "" end
 
-  -- ---------- plot block (lazy render with native animation)
-  local plot_block = ""
-  if has_plot then
-    local plot_sub = ""
-    if plot_subtitle ~= "" then
-      plot_subtitle = escfmt(plot_subtitle)
-      plot_sub = string.format(
+    local sub_html = ""
+    if psubtitle ~= "" then
+      psubtitle = escfmt(psubtitle)
+      sub_html = string.format(
         '<div class="text-muted" style="font-size:0.9em;margin-bottom:0.3rem;">%s</div>',
-        plot_subtitle
+        psubtitle
       )
     end
 
     local pid  = "plot-" .. tostring(math.random(100000, 999999))
     local tid  = "tpl-"  .. tostring(math.random(100000, 999999))
 
-    plot_title  = escfmt(plot_title)
-    plot_html   = escfmt(plot_html)
-    plot_link   = escfmt(plot_link)
-    plot_height = escfmt(plot_height)
+    ptitle  = escfmt(ptitle)
+    phtml   = escfmt(phtml)
 
-    plot_block = string.format([[
+    if plink ~= "" then
+      plink = plink:gsub("^<p>(.*)</p>\n?$", "%1")
+      plink = escfmt(plink)
+    end
+
+    pheight = escfmt(pheight)
+
+    local block = string.format([[
       <div class="card-title">%s</div>
       %s
       <div id="%s" class="plot-frame" style="height:%s;"></div>
@@ -264,76 +266,72 @@ function shorty(args, kwargs, meta)
           io.observe(holder);
         })();
       </script>
-    ]], plot_title, plot_sub, pid, plot_height, tid, plot_html, plot_link, pid, tid)
+    ]], ptitle, sub_html, pid, pheight, tid, phtml, plink, pid, tid)
+
+    return block
   end
 
-  -- ---------- table block
-local tbl_block = ""
-if has_tbl then
-  local tbl_sub = ""
-  if tbl_subtitle ~= "" then
-    tbl_subtitle = escfmt(tbl_subtitle)
-    tbl_sub = string.format('<div class="text-muted" style="font-size:0.9em;margin-bottom:0.3rem;">%s</div>', tbl_subtitle)
-  end
-  tbl_title = escfmt(tbl_title)
-  tbl       = escfmt(tbl)
-  tbl_link  = escfmt(tbl_link)
+  local has_plot1 = (plot_title ~= "" or plot_html ~= "" or plot_link ~= "")
+  local has_plot2 = (plot2_title ~= "" or plot2_html ~= "" or plot2_link ~= "")
+  local has_img   = (img ~= "")
 
-  -- NEW: if the html contains a table, wrap it in a scroller
-  local wrapped_tbl = tbl
-  if tbl:match("<table") then
-    wrapped_tbl = string.format('<div class="table-scroll">%s</div>', tbl)
-  end
-
-  tbl_block = string.format([[
-    <div class="card-title">%s</div>
-    %s
-    %s
-    %s
-  ]], tbl_title, tbl_sub, wrapped_tbl, tbl_link)
-end
+  local plot_block1 = has_plot1 and build_plot_block(plot_title,  plot_subtitle,  plot_html,  plot_link,  plot_height)  or ""
+  local plot_block2 = has_plot2 and build_plot_block(plot2_title, plot2_subtitle, plot2_html, plot2_link, plot2_height) or ""
 
   -- ---------- image block
   local img_block = ""
   if has_img then
     img = escfmt(img)
     img_block = string.format([[
-      <div class="g-col-12" style="display:flex;align-items:center;justify-content:center;">
-        <img src="%s" class="img-fluid" style="max-height:250px;">
+      <div class="grid">
+        <div class="g-col-12" style="display:flex;align-items:center;justify-content:center;">
+          <img src="%s" class="img-fluid" style="max-height:250px;">
+        </div>
       </div>
     ]], img)
   end
 
-  -- ---------- grid logic
+  -- ---------- grid logic (two plots side by side)
   local grid_block = ""
-  if has_plot and has_tbl then
+  if has_plot1 and has_plot2 then
     grid_block = string.format([[
-      <div class="grid">
-        <div class="g-col-12 g-col-md-6">%s</div>
+      <div class="grid shorty-grid">
         <div class="g-col-12 g-col-md-6">
-          <div class="grid" style="width:100%%;">
+          <div class="shorty-plotcol">
             %s
-            <div class="g-col-12">%s</div>
+          </div>
+        </div>
+        <div class="g-col-12 g-col-md-6">
+          <div class="shorty-plotcol">
+            %s
           </div>
         </div>
       </div>
-    ]], plot_block, (has_img and img_block or ""), tbl_block)
-  elseif has_plot then
+    ]], plot_block1, plot_block2)
+  elseif has_plot1 then
     grid_block = string.format([[
-      <div class="grid">
-        <div class="g-col-12">%s</div>
-        %s
+      <div class="grid shorty-grid">
+        <div class="g-col-12">
+          <div class="shorty-plotcol">
+            %s
+          </div>
+        </div>
       </div>
-    ]], plot_block, (has_img and img_block or ""))
-  elseif has_tbl then
+    ]], plot_block1)
+  elseif has_plot2 then
     grid_block = string.format([[
-      <div class="grid">
-        %s
-        <div class="g-col-12">%s</div>
+      <div class="grid shorty-grid">
+        <div class="g-col-12">
+          <div class="shorty-plotcol">
+            %s
+          </div>
+        </div>
       </div>
-    ]], (has_img and img_block or ""), tbl_block)
-  elseif has_img then
-    grid_block = string.format('<div class="grid">%s</div>', img_block)
+    ]], plot_block2)
+  end
+
+  if has_img then
+    grid_block = grid_block .. "\n" .. img_block
   end
 
   -- ---------- subtitle
@@ -364,70 +362,6 @@ end
   return pandoc.RawBlock("html", html)
 end
 
-function plotbox(args, kwargs, meta)
-  local title = pandoc.utils.stringify(kwargs["title"] or "")
-  local description = pandoc.utils.stringify(kwargs["description"] or "")
-  local plot_html = pandoc.utils.stringify(kwargs["plot"] or "")
-  local link = pandoc.utils.stringify(kwargs["link"] or "")
-  local more = pandoc.utils.stringify(kwargs["more"] or "")
-  local accordion_title = pandoc.utils.stringify(kwargs["accordion"] or "")
-
-  -- Clean up any {=html} markers that might be present
-  plot_html = plot_html:gsub("`{=html}", "")
-  plot_html = plot_html:gsub("`", "")
-  plot_html = plot_html:gsub("^%s+", ""):gsub("%s+$", "")
-
--- Handle escaped § first (\\§ → placeholder)
-  more = more:gsub("\\§", "@@@LITERAL_SECTION@@@")
-
-  more = more:gsub("%s*§§§%s*", "@@@BLOCK@@@")
-             :gsub("%s*§%s*", "\n")
-             :gsub("@@@BLOCK@@@", "\n\n")
-             :gsub("@@@LITERAL_SECTION@@@", "§")
-
-  local link_html = pandoc.write(pandoc.read(link, "markdown"), "html")
-  local more_html = pandoc.write(pandoc.read(more, "markdown"), "html")
-  local randcase = randstring(10)
-
-  if more ~= "" then
-    more_html = string.format([[
-        <p>
-  <div class="accordion" id="accordionExample">
-  <div class="accordion-item">
-    <div class="accordion-header" id="heading-%s">
-      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-%s" aria-expanded="false" aria-controls="%s">
-        %s
-      </button>
-    </div>
-    <div id="collapse-%s" class="accordion-collapse collapse" aria-labelledby="heading-%s" data-bs-parent="#accordionExample">
-      <div class="accordion-body">
-        %s
-      </div>
-    </div>
-  </div>
-  </div>
-  </p>
-    ]], randcase, randcase, randcase, accordion_title, randcase, randcase, more_html)
-  end
-
-  local html = string.format([[
-    <p>
-    <div class="card">
-      <div class="card-body">
-        <h2 class="card-title">%s</h2>
-        <p class="card-text">%s</p>
-        %s
-        %s
-        %s
-      </div>
-    </div>
-    </p>
-  ]], title, description, plot_html, link_html, more_html)
-
-  return pandoc.RawBlock("html", html)
-
-end
-
 function feature(args, kwargs, meta)
   local U = pandoc.utils.stringify
 
@@ -444,7 +378,7 @@ function feature(args, kwargs, meta)
 
   local onclick_attr, cursor_style = "", ""
   if link ~= "" then
-    onclick_attr = ' onclick="window.location.href=\'' .. link .. '\'"'
+    onclick_attr = ' onclick="window.open(\'' .. link .. '\', \'_blank\')"'
     cursor_style = ' style="cursor: pointer;' .. style .. '"'
   elseif style ~= "" then
     cursor_style = ' style="' .. style .. '"'
@@ -554,10 +488,10 @@ function feature(args, kwargs, meta)
             <div class="feature-title">%s</div>
             <div class="feature-subtitle">%s</div>
             <div class="feature-copy">%s</div>
+            %s
           </div>
         </div>
       </div>
-      %s
     </div>
   ]], onclick_attr, cursor_style, media_html, eyebrow, title_html, subtitle, body_html, accordion_html)
 
@@ -573,12 +507,15 @@ function contact(args, kwargs, meta)
   local phone = U(kwargs["phone"] or "")
   local mail  = U(kwargs["mail"]  or "")
   local icon  = U(kwargs["icon"]  or "bi-person-circle")
-  local style = U(kwargs["style"] or "")  -- e.g. "height:100%;"
+  local style = U(kwargs["style"] or "")
   if icon == "" then icon = "bi-person-circle" end
 
-  -- address: accept list, \n, or <br>
+  --------------------------------------------------------------------------
+  -- address: accept list, \n, or <br>, same behaviour as your original code
+  --------------------------------------------------------------------------
   local address_lines = {}
   local addr = kwargs["address"]
+
   if type(addr) == "table" then
     for _, a in ipairs(addr) do
       local s = U(a)
@@ -595,15 +532,28 @@ function contact(args, kwargs, meta)
     end
   end
 
-  -- hrefs
-  local phone_href = phone:gsub("%s+", "")
-  phone_href = phone_href ~= "" and ("tel:" .. phone_href) or ""
-  local mail_href  = mail ~= "" and ("mailto:" .. mail) or ""
+  --------------------------------------------------------------------------
+  -- Strong obfuscation: convert text -> char codes (ASCII)
+  --------------------------------------------------------------------------
+  local function to_codes(s)
+    local codes = {}
+    for i = 1, #s do
+      table.insert(codes, string.byte(s, i))
+    end
+    return table.concat(codes, "-")   -- "43-50-57-57-32-"
+  end
 
-  -- optional inline style
+  local phone_codes = phone ~= "" and to_codes(phone) or ""
+  local email_codes = mail  ~= "" and to_codes(mail)  or ""
+
+  --------------------------------------------------------------------------
+  -- Inline style
+  --------------------------------------------------------------------------
   local style_attr = (style ~= "" and (' style="' .. style .. '"') or "")
 
-  -- build lines
+  --------------------------------------------------------------------------
+  -- Build <li> lines for the card
+  --------------------------------------------------------------------------
   local lines = {}
 
   if role ~= "" then
@@ -611,7 +561,6 @@ function contact(args, kwargs, meta)
       '<li class="contact-line"><span class="contact-role">%s</span></li>', role))
   end
 
-  -- ONE pin, multiline address inside the same <li>
   if #address_lines > 0 then
     local joined = table.concat(address_lines, "<br>")
     table.insert(lines, string.format(
@@ -619,18 +568,25 @@ function contact(args, kwargs, meta)
       joined))
   end
 
-  if phone ~= "" then
+  -- Phone (obfuscated)
+  if phone_codes ~= "" then
     table.insert(lines, string.format(
-      '<li class="contact-line"><i class="bi bi-telephone me-2"></i><a href="%s">%s</a></li>',
-      phone_href, phone))
+      '<li class="contact-line"><i class="bi bi-telephone me-2"></i>' ..
+      '<span class="staff-phone" data-phone-codes="%s"></span></li>',
+      phone_codes))
   end
 
-  if mail ~= "" then
+  -- Email (obfuscated)
+  if email_codes ~= "" then
     table.insert(lines, string.format(
-      '<li class="contact-line"><i class="bi bi-envelope me-2"></i><a href="%s">%s</a></li>',
-      mail_href, mail))
+      '<li class="contact-line"><i class="bi bi-envelope me-2"></i>' ..
+      '<a class="staff-email" href="#" data-email-codes="%s"></a></li>',
+      email_codes))
   end
 
+  --------------------------------------------------------------------------
+  -- Full card HTML
+  --------------------------------------------------------------------------
   local html = string.format([[
     <div class="card contact-card"%s>
       <div class="card-body">
@@ -705,7 +661,6 @@ function randstring(chars)
   return(s)
 end
 
--- OPEN: {{< readmore height="6rem" collapsed="Læs mere" expanded="Vis mindre" >}}
 function readmore(args, kwargs, meta)
   -- Safely stringify attributes (they can be tables)
   local function s(v)
@@ -731,7 +686,6 @@ function readmore(args, kwargs, meta)
   return pandoc.RawBlock("html", html)
 end
 
--- CLOSE: {{< readmore_end >}}
 function readmore_end(args, kwargs, meta)
   return pandoc.RawBlock("html", [[
   </div>
@@ -742,9 +696,6 @@ function readmore_end(args, kwargs, meta)
   </div>
 </div>]])
 end
-
--- Shortcode: {{< pdf_archive dir="virksomhedsplan" >}}
--- Optional: title, label_base, collapsed, target_blank, icon, id
 
 local U = pandoc.utils.stringify
 
@@ -893,35 +844,6 @@ function pdf_archive(args, kwargs, meta)
   return pandoc.RawBlock("html", table.concat(out, "\n"))
 end
 
-function externallink(args, kwargs, meta)
-  local U = pandoc.utils.stringify
-  local title = U(kwargs["title"] or "Ekstern kilde")
-  local text  = U(kwargs["text"]  or "")
-  local url   = U(kwargs["url"]   or "#")
-  local icon  = U(kwargs["icon"]  or "bi-box-arrow-up-right")
-  local style = U(kwargs["style"] or "")
-
-  local html = string.format([[
-  <div class="card h-100 shadow-sm border-0 externcard" style="%s">
-    <div class="card-body d-flex align-items-center gap-3 p-4">
-      <i class="bi %s fs-1 flex-shrink-0 text-primary"></i>
-      <div class="flex-grow-1">
-        <h5 class="card-title mb-1">
-          <a href="%s" target="_blank" rel="noopener" class="stretched-link text-decoration-none">
-            %s
-          </a>
-        </h5>
-        <p class="card-text mb-0">%s</p>
-      </div>
-    </div>
-  </div>
-  ]], style, icon, url, title, text)
-
-  return pandoc.RawBlock("html", html)
-end
-
--- _extensions/statglshortcodes/externcard.lua
-
 local U = pandoc.utils.stringify
 
 local function h(s)
@@ -965,6 +887,87 @@ function externcard(args, kwargs, meta)
     h(chevron),
     h(url), target_attr, h(rel)
   )
+
+  return pandoc.RawBlock("html", html)
+end
+
+function inflationcalc(args, kwargs, meta)
+  local U  = pandoc.utils.stringify
+  local id = U(kwargs["id"] or "inflation-calculator")
+
+  local eyebrow  = U(kwargs["eyebrow"]  or "Beregner")
+  local title    = U(kwargs["title"]    or "Inflationsberegner")
+  local subtitle = U(kwargs["subtitle"] or
+    "Se hvad et beløb fra et tidligere tidspunkt svarer til i priserne på et andet tidspunkt.")
+
+  local html = [[
+<div class="panel-card card inflation-card" id="{{ID}}">
+  <div class="card-body d-flex flex-column gap-3">
+
+    <!-- Header block -->
+    <div>
+      <div class="text-uppercase small fw-semibold text-muted mb-1">
+        {{EYEBROW}}
+      </div>
+      <h2 class="card-title anchored">{{TITLE}}</h2>
+      <p class="text-muted small mb-0">{{SUBTITLE}}</p>
+    </div>
+
+    <!-- Form body -->
+    <div class="mt-2">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-4">
+          <label for="{{ID}}-amount" class="form-label">Beløb</label>
+          <div class="input-group">
+            <span class="input-group-text">kr.</span>
+            <input type="number" class="form-control" id="{{ID}}-amount"
+                   value="1000" min="0" step="1">
+          </div>
+        </div>
+
+        <div class="col-6 col-md-4">
+          <label for="{{ID}}-from" class="form-label">Fra</label>
+          <select class="form-select" id="{{ID}}-from"></select>
+        </div>
+
+        <div class="col-6 col-md-4">
+          <label for="{{ID}}-to" class="form-label">Til</label>
+          <select class="form-select" id="{{ID}}-to"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result footer -->
+    <div class="mt-3 pt-2 border-top" style="border-top-color: var(--hairline);">
+      <p class="mb-1 text-muted">
+        Omregnet beløb i priser for <span id="{{ID}}-to-label"></span>:
+      </p>
+      <p class="fs-4 fw-bold mb-0">
+        <span id="{{ID}}-result">—</span> kr.
+      </p>
+
+      <p class="mt-2 mb-0 text-muted small" id="{{ID}}-meta">
+        Henter prisindeks fra Statistikbanken …
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script src="/_extensions/StatisticsGreenland/statglshortcodes/inflationcalc.js"></script>
+<script>
+  if (window.initInflationCalc) {
+    window.initInflationCalc("{{ID}}");
+  } else {
+    console.error("inflationcalc.js not loaded: initInflationCalc missing");
+  }
+</script>
+]]
+
+  html = html:gsub("{{ID}}", id)
+  html = html:gsub("{{EYEBROW}}", eyebrow)
+  html = html:gsub("{{TITLE}}", title)
+  html = html:gsub("{{SUBTITLE}}", subtitle)
 
   return pandoc.RawBlock("html", html)
 end
