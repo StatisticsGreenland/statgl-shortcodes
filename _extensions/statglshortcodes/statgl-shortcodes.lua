@@ -51,313 +51,247 @@ end
 
 function shorty(args, kwargs, meta)
   local utils = pandoc.utils
+  local U     = utils.stringify
 
-  -- helpers
-  local function escfmt(s)  -- escape % for string.format
+  -- helpers ------------------------------------------------------
+  local function escfmt(s)
     if not s or s == "" then return s end
     return s:gsub("%%", "%%%%")
   end
+
   local function md_to_html(md)
-    if md == "" then return "" end
+    if not md or md == "" then return "" end
     return pandoc.write(pandoc.read(md, "markdown"), "html")
   end
 
-  -- inputs
-  local title           = utils.stringify(kwargs["title"] or "")
-  local subtitle        = utils.stringify(kwargs["subtitle"] or "")
-  local description     = utils.stringify(kwargs["description"] or "")
+  local function looks_like_html(s)
+    if not s or s == "" then return false end
+    return s:match("^%s*<[%w!%?/]") ~= nil
+  end
 
-  -- plot 1
-  local plot_title      = utils.stringify(kwargs["plot_title"] or "")
-  local plot_subtitle   = utils.stringify(kwargs["plot_subtitle"] or "")
-  local plot_html       = utils.stringify(kwargs["plot"] or "")
-  local plot_link       = utils.stringify(kwargs["plot_link"] or "")
-  local plot_height     = utils.stringify(kwargs["plot_height"] or "300px")
+  local function looks_like_widget(s)
+    if not s or s == "" then return false end
+    if s:match("html%-widget") then return true end
+    if s:match("highchart")    then return true end
+    return false
+  end
 
-  -- plot 2
-  local plot2_title     = utils.stringify(kwargs["plot2_title"] or "")
-  local plot2_subtitle  = utils.stringify(kwargs["plot2_subtitle"] or "")
-  local plot2_html      = utils.stringify(kwargs["plot2"] or "")
-  local plot2_link      = utils.stringify(kwargs["plot2_link"] or "")
-  local plot2_height    = utils.stringify(kwargs["plot2_height"] or plot_height)
+  -- inputs -------------------------------------------------------
+  local title         = U(kwargs["title"]         or "")
+  local subtitle      = U(kwargs["subtitle"]      or "")
+  local description   = U(kwargs["description"]   or "")
+  local link          = U(kwargs["link"]          or "")
+  local plot_raw      = U(kwargs["plot"]          or "")
+  local plot_subtitle = U(kwargs["plot_subtitle"] or "")
+  local height        = U(kwargs["height"]        or "")
 
-  local img             = utils.stringify(kwargs["img"] or "")
-  local accordion_title = utils.stringify(kwargs["accordion"] or "Mere")
-  local more_raw        = utils.stringify(kwargs["more"] or "")
-
-  -- trim + dedent (fixes Markdown turning indented text into code blocks)
-  local function trim(s) return (s:gsub("^%s+", ""):gsub("%s+$","")) end
-
-  local function dedent(s)
-    local minindent
-    for line in s:gmatch("[^\r\n]*\r?\n?") do
-      if line:match("%S") then
-        local indent = line:match("^%s*"):len()
-        minindent = (minindent and math.min(minindent, indent)) or indent
-      end
+  -- plot HTML ----------------------------------------------------
+  local plot_html = ""
+  if plot_raw ~= "" then
+    if looks_like_html(plot_raw) then
+      plot_html = plot_raw
+    else
+      plot_html = md_to_html(plot_raw)
     end
-    if not minindent or minindent == 0 then return s end
-    local pat = "^" .. string.rep(" ", minindent)
-    return (s:gsub("\r\n", "\n"):gsub("\n" .. pat, "\n"):gsub("^" .. pat, ""))
   end
 
-  -- allow generic 'link' and 'link2' shorthands
-  if plot_link == "" then
-    local generic_link = utils.stringify(kwargs["link"] or "")
-    if generic_link ~= "" then plot_link = generic_link end
-  end
-  if plot2_link == "" then
-    local generic_link2 = utils.stringify(kwargs["link2"] or "")
-    if generic_link2 ~= "" then plot2_link = generic_link2 end
-  end
-
-  -- clean plot html (correct raw-HTML fence + whitespace)
-  local function clean_plot_html(html)
-    html = html
-      :gsub("`{=html}", "")
-      :gsub("`", "")
-      :gsub("^%s+", "")
-      :gsub("%s+$", "")
-    html = html:gsub("^%s*<p>(.*)</p>%s*$", "%1")
-    return html
-  end
-
-  plot_html  = clean_plot_html(plot_html)
-  plot2_html = clean_plot_html(plot2_html)
-
-  -- description -> html (strip outer <p>)
-  local description_html = ""
-  if description ~= "" then
-    description_html = md_to_html(description)
-    description_html = description_html:gsub("^<p>(.*)</p>\n?$", "%1")
-  end
-
-  -- turn links into small html spans
-  if plot_link ~= "" then
-    plot_link = md_to_html('<span style="font-size:0.7em;">' .. plot_link .. '</span>')
-  end
-  if plot2_link ~= "" then
-    plot2_link = md_to_html('<span style="font-size:0.7em;">' .. plot2_link .. '</span>')
-  end
-
-  -- extra links link_*
-  local links = {}
-  for key, val in pairs(kwargs) do
-    if key:match("^link_") then table.insert(links, val) end
-  end
-  local rendered_links = {}
-  for _, mdlink in ipairs(links) do
-    local html = md_to_html(mdlink)
-    html = html:gsub("^<p>(.*)</p>\n?$", "%1")
-    table.insert(rendered_links, string.format("<li>%s</li>", html))
-  end
-
-  -- "more" content with custom line-break tokens (robust)
-  local more_html = ""
-  if more_raw ~= "" then
-    local more_md = dedent(more_raw):gsub("\r\n", "\n")
-    -- paragraph breaks
-    more_md = more_md
-      :gsub("\\\\§\\\\§", "\n\n")  -- \§\§ (double backslashes after Lua escaping)
-      :gsub("\\§\\§",   "\n\n")    -- edge cases
-      :gsub("§§",       "\n\n")    -- plain §§
-
-    -- hard line breaks
-    more_md = more_md
-      :gsub("\\\\§", "  \n")       -- \§
-      :gsub("\\§",   "  \n")       -- edge cases
-
-    more_md = trim(more_md)
-    more_html = md_to_html(more_md)
-  end
-
-  -- build accordion body if anything to show
-  local accordion_block = ""
-  do
-    local body_parts = {}
-    if more_html ~= "" then table.insert(body_parts, '<div class="shorty-more">' .. more_html .. '</div>') end
-    if #rendered_links > 0 then
-      table.insert(body_parts, '<ul class="shorty-links">' .. table.concat(rendered_links, "\n") .. '</ul>')
+  -- docs (doc1_title/doc1_text, …, doc6_title/doc6_text) --------
+  local docs = {}
+  for i = 1, 6 do
+    local t = U(kwargs["doc" .. i .. "_title"] or "")
+    local b = U(kwargs["doc" .. i .. "_text"]  or "")
+    if t ~= "" or b ~= "" then
+      table.insert(docs, { title = t, body = b })
     end
+  end
 
-    if #body_parts > 0 then
-      local randcase = string.char(math.random(97, 122)) .. tostring(math.random(1000,9999))
-      local acc_id = "acc-" .. randcase
-      local body_html = table.concat(body_parts, "\n")
-      accordion_title = escfmt(accordion_title)
-      body_html = escfmt(body_html)
+  local docs_html = ""
+  if #docs > 0 then
+    local base_id = "shortydocs-" .. tostring(math.random(100000, 999999))
+    docs_html = '<div class="accordion shorty-docs mt-3" id="' .. escfmt(base_id) .. '">'
 
-      accordion_block = string.format([[
-        <div class="accordion panel-accordion" id="%s">
-          <div class="accordion-item">
-            <div class="accordion-header" id="heading-%s">
-              <button class="accordion-button collapsed" type="button"
-                data-bs-toggle="collapse" data-bs-target="#collapse-%s"
-                aria-expanded="false" aria-controls="%s">%s</button>
-            </div>
-            <div id="collapse-%s" class="accordion-collapse collapse"
-                 aria-labelledby="heading-%s" data-bs-parent="#%s">
-              <div class="accordion-body">%s</div>
-            </div>
+    for idx, d in ipairs(docs) do
+      local item_id = base_id .. "-item-" .. idx
+      docs_html = docs_html .. string.format([[
+      <div class="accordion-item">
+        <strong class="accordion-header" id="%s-header">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#%s-body"
+                  aria-expanded="false" aria-controls="%s-body">
+            %s
+          </button>
+        </strong>
+        <div id="%s-body" class="accordion-collapse collapse" aria-labelledby="%s-header">
+          <div class="accordion-body">
+            %s
           </div>
         </div>
-      ]], acc_id, randcase, randcase, randcase, accordion_title, randcase, randcase, acc_id, body_html)
-    end
-  end
-
-  -- ---------- plot builder (lazy render with native animation)
-  local function build_plot_block(ptitle, psubtitle, phtml, plink, pheight)
-    local has_content = (ptitle ~= "" or phtml ~= "" or plink ~= "")
-    if not has_content then return "" end
-
-    local sub_html = ""
-    if psubtitle ~= "" then
-      psubtitle = escfmt(psubtitle)
-      sub_html = string.format(
-        '<div class="text-muted" style="font-size:0.9em;margin-bottom:0.3rem;">%s</div>',
-        psubtitle
+      </div>]],
+        escfmt(item_id),
+        escfmt(item_id),
+        escfmt(item_id),
+        escfmt(d.title),
+        escfmt(item_id),
+        escfmt(item_id),
+        md_to_html(d.body or "")
       )
     end
 
-    local pid  = "plot-" .. tostring(math.random(100000, 999999))
-    local tid  = "tpl-"  .. tostring(math.random(100000, 999999))
+    docs_html = docs_html .. "</div>"
+  end
 
-    ptitle  = escfmt(ptitle)
-    phtml   = escfmt(phtml)
-
-    if plink ~= "" then
-      plink = plink:gsub("^<p>(.*)</p>\n?$", "%1")
-      plink = escfmt(plink)
+  -- link under plot ----------------------------------------------
+  local plot_link_html = ""
+  if link ~= "" then
+    local body = link
+    if not looks_like_html(body) then
+      body = md_to_html(body)
     end
-
-    pheight = escfmt(pheight)
-
-    local block = string.format([[
-      <div class="card-title">%s</div>
-      %s
-      <div id="%s" class="plot-frame" style="height:%s;"></div>
-      <template id="%s"><div class="plot-area">%s</div></template>
-      %s
-      <script>
-        (function(){
-          var holder = document.getElementById('%s');
-          var tpl    = document.getElementById('%s');
-          if(!holder || !tpl) return;
-          function renderNow(){
-            var frag = tpl.content.cloneNode(true);
-            holder.appendChild(frag);
-            if (window.HTMLWidgets && typeof HTMLWidgets.staticRender === 'function') {
-              try { HTMLWidgets.staticRender(); } catch(e){}
-            }
-            if (window._initRevealTables) window._initRevealTables(holder);
-          }
-          if (!('IntersectionObserver' in window)) { renderNow(); return; }
-          var played = false;
-          var io = new IntersectionObserver(function(entries){
-            entries.forEach(function(entry){
-              if (played) return;
-              if (entry.isIntersecting && entry.intersectionRatio > 0.2) {
-                played = true;
-                renderNow();
-                io.disconnect();
-              }
-            });
-          }, { threshold: [0, 0.2, 0.5, 1] });
-          io.observe(holder);
-        })();
-      </script>
-    ]], ptitle, sub_html, pid, pheight, tid, phtml, plink, pid, tid)
-
-    return block
+    plot_link_html = string.format(
+      '<div class="shorty-link shorty-link-underplot mt-2">%s</div>',
+      body
+    )
   end
 
-  local has_plot1 = (plot_title ~= "" or plot_html ~= "" or plot_link ~= "")
-  local has_plot2 = (plot2_title ~= "" or plot2_html ~= "" or plot2_link ~= "")
-  local has_img   = (img ~= "")
-
-  local plot_block1 = has_plot1 and build_plot_block(plot_title,  plot_subtitle,  plot_html,  plot_link,  plot_height)  or ""
-  local plot_block2 = has_plot2 and build_plot_block(plot2_title, plot2_subtitle, plot2_html, plot2_link, plot2_height) or ""
-
-  -- ---------- image block
-  local img_block = ""
-  if has_img then
-    img = escfmt(img)
-    img_block = string.format([[
-      <div class="grid">
-        <div class="g-col-12" style="display:flex;align-items:center;justify-content:center;">
-          <img src="%s" class="img-fluid" style="max-height:250px;">
-        </div>
-      </div>
-    ]], img)
-  end
-
-  -- ---------- grid logic (two plots side by side)
-  local grid_block = ""
-  if has_plot1 and has_plot2 then
-    grid_block = string.format([[
-      <div class="grid shorty-grid">
-        <div class="g-col-12 g-col-md-6">
-          <div class="shorty-plotcol">
-            %s
-          </div>
-        </div>
-        <div class="g-col-12 g-col-md-6">
-          <div class="shorty-plotcol">
-            %s
-          </div>
-        </div>
-      </div>
-    ]], plot_block1, plot_block2)
-  elseif has_plot1 then
-    grid_block = string.format([[
-      <div class="grid shorty-grid">
-        <div class="g-col-12">
-          <div class="shorty-plotcol">
-            %s
-          </div>
-        </div>
-      </div>
-    ]], plot_block1)
-  elseif has_plot2 then
-    grid_block = string.format([[
-      <div class="grid shorty-grid">
-        <div class="g-col-12">
-          <div class="shorty-plotcol">
-            %s
-          </div>
-        </div>
-      </div>
-    ]], plot_block2)
-  end
-
-  if has_img then
-    grid_block = grid_block .. "\n" .. img_block
-  end
-
-  -- ---------- subtitle
+  -- text block (markdown in subtitle + description) --------------
   local subtitle_html = ""
   if subtitle ~= "" then
-    subtitle = escfmt(subtitle)
-    subtitle_html = string.format('<div class="text-muted" style="margin-bottom:0.5rem;">%s</div>', subtitle)
+    -- allow markdown in subtitle
+    subtitle_html = '<div class="shorty-subtitle">' .. md_to_html(subtitle) .. '</div>'
   end
 
-  -- ---------- final card
-  title            = escfmt(title)
-  description_html = escfmt(description_html)
+  local description_html = ""
+  if description ~= "" then
+    -- allow markdown in description (**bold**, lists, `code`, etc.)
+    description_html = '<div class="shorty-description">' .. md_to_html(description) .. '</div>'
+  end
 
+  local text_block = string.format([[
+    <div class="shorty-textcol">
+      %s
+      %s
+      %s
+    </div>]],
+    (title ~= "" and ('<h2 class="card-title">' .. escfmt(title) .. '</h2>') or ""),
+    subtitle_html,
+    description_html
+  )
+
+  -- plot subtitle ------------------------------------------------
+  local plot_subtitle_html = ""
+  if plot_subtitle ~= "" then
+    plot_subtitle_html =
+      '<p class="shorty-plot-subtitle">' .. escfmt(plot_subtitle) .. '</p>'
+  end
+
+  -- plot block (with link + docs under plot) ---------------------
+  local plot_block = ""
+
+  if plot_html ~= "" then
+    if looks_like_widget(plot_html) then
+      -- widget path: lazy-load container
+      local id_suffix = tostring(math.random(100000, 999999))
+      local plot_id   = "plot-" .. id_suffix
+      local tpl_id    = "tpl-"  .. id_suffix
+      local height_attr = (height ~= "" and (' style="height:' .. escfmt(height) .. ';"') or "")
+
+      plot_block = string.format([[
+      <div class="shorty-plotcol">
+        %s
+        <div id="%s" class="plot-frame"%s></div>
+        <template id="%s"><div class="plot-area">%s</div></template>
+
+        <script>
+          (function(){
+            var holder = document.getElementById('%s');
+            var tpl    = document.getElementById('%s');
+            if(!holder || !tpl) return;
+
+            function renderNow(){
+              var frag = tpl.content && tpl.content.cloneNode(true);
+              if (frag && frag.childNodes.length > 0) {
+                holder.appendChild(frag);
+              } else {
+                holder.innerHTML = tpl.innerHTML;
+              }
+
+              if (window.HTMLWidgets && typeof HTMLWidgets.staticRender === 'function') {
+                try { HTMLWidgets.staticRender(); } catch(e){}
+              }
+
+              if (window._initRevealTables) {
+                try { window._initRevealTables(holder); } catch(e){}
+              }
+            }
+
+            if (!('IntersectionObserver' in window)) { renderNow(); return; }
+
+            var played = false;
+            var io = new IntersectionObserver(function(entries){
+              entries.forEach(function(entry){
+                if (played) return;
+                if (entry.isIntersecting && entry.intersectionRatio > 0.2) {
+                  played = true;
+                  renderNow();
+                  io.disconnect();
+                }
+              });
+            }, { threshold: [0, 0.2, 0.5, 1] });
+
+            io.observe(holder);
+          })();
+        </script>
+
+        %s
+        %s
+      </div>]],
+        plot_subtitle_html,
+        escfmt(plot_id), height_attr,
+        escfmt(tpl_id),  escfmt(plot_html),
+        escfmt(plot_id), escfmt(tpl_id),
+        plot_link_html,
+        docs_html
+      )
+
+    else
+      -- table / plain HTML path
+      plot_block = string.format([[
+      <div class="shorty-plotcol">
+        %s
+        <div class="plot-frame">
+          <div class="plot-area">
+            <div class="shorty-table-wrapper">
+              %s
+            </div>
+          </div>
+        </div>
+        %s
+        %s
+      </div>]],
+        plot_subtitle_html,
+        plot_html,
+        plot_link_html,
+        docs_html
+      )
+    end
+  end
+
+  -- outer wrapper ------------------------------------------------
   local html = string.format([[
-    <div class="card panel-card mb-4">
-      <div class="card-body">
-        <h2 class="card-title">%s</h2>
-        %s
-        %s
+<div class="card panel-card mb-4 shorty">
+  <div class="card-body">
+    <div class="grid shorty-grid">
+      <div class="g-col-12">
         %s
         %s
       </div>
     </div>
-  ]], title, subtitle_html,
-      (description_html ~= "" and string.format('<p class="card-text">%s</p>', description_html) or ""),
-      grid_block, accordion_block)
+  </div>
+</div>]],
+    text_block,
+    plot_block
+  )
 
   return pandoc.RawBlock("html", html)
 end

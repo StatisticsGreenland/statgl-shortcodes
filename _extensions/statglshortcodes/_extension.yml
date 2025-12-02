@@ -7,7 +7,7 @@ contributes:
     - statgl-shortcodes.lua
   formats:
     html:
-      template: template.html   
+      template: template.html
       filters:
         - lang-flags.lua
       css:
