@@ -65,7 +65,14 @@ function shorty(args, kwargs, meta)
   end
 
   local function looks_like_html(s)
-    if not s or s == "" then return false end
+    if s == nil then return false end
+
+    -- coerce non-strings (e.g. pandoc inlines) to a string
+    if type(s) ~= "string" then
+      s = U(s)
+    end
+
+    if s == "" then return false end
     return s:match("^%s*<[%w!%?/]") ~= nil
   end
 
@@ -76,127 +83,34 @@ function shorty(args, kwargs, meta)
     return false
   end
 
-  -- inputs -------------------------------------------------------
-  local title         = U(kwargs["title"]         or "")
-  local subtitle      = U(kwargs["subtitle"]      or "")
-  local description   = U(kwargs["description"]   or "")
-  local link          = U(kwargs["link"]          or "")
-  local plot_raw      = U(kwargs["plot"]          or "")
-  local plot_subtitle = U(kwargs["plot_subtitle"] or "")
-  local height        = U(kwargs["height"]        or "")
-
-  -- plot HTML ----------------------------------------------------
-  local plot_html = ""
-  if plot_raw ~= "" then
-    if looks_like_html(plot_raw) then
-      plot_html = plot_raw
-    else
-      plot_html = md_to_html(plot_raw)
+  local function trim_to_string(x)
+    if x == nil then return "" end
+    if type(x) ~= "string" then
+      x = U(x)
     end
+    -- trim leading/trailing whitespace
+    x = x:gsub("^%s+", ""):gsub("%s+$", "")
+    return x
   end
 
-  -- docs (doc1_title/doc1_text, …, doc6_title/doc6_text) --------
-  local docs = {}
-  for i = 1, 6 do
-    local t = U(kwargs["doc" .. i .. "_title"] or "")
-    local b = U(kwargs["doc" .. i .. "_text"]  or "")
-    if t ~= "" or b ~= "" then
-      table.insert(docs, { title = t, body = b })
-    end
-  end
-
-  local docs_html = ""
-  if #docs > 0 then
-    local base_id = "shortydocs-" .. tostring(math.random(100000, 999999))
-    docs_html = '<div class="accordion shorty-docs mt-3" id="' .. escfmt(base_id) .. '">'
-
-    for idx, d in ipairs(docs) do
-      local item_id = base_id .. "-item-" .. idx
-      docs_html = docs_html .. string.format([[
-      <div class="accordion-item">
-        <strong class="accordion-header" id="%s-header">
-          <button class="accordion-button collapsed" type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#%s-body"
-                  aria-expanded="false" aria-controls="%s-body">
-            %s
-          </button>
-        </strong>
-        <div id="%s-body" class="accordion-collapse collapse" aria-labelledby="%s-header">
-          <div class="accordion-body">
-            %s
-          </div>
-        </div>
-      </div>]],
-        escfmt(item_id),
-        escfmt(item_id),
-        escfmt(item_id),
-        escfmt(d.title),
-        escfmt(item_id),
-        escfmt(item_id),
-        md_to_html(d.body or "")
-      )
+  -- helper: build a single plot column (no link/docs here) -------
+  local function build_plotcol(plot_html, plot_subtitle_html, height)
+    if not plot_html or plot_html == "" then
+      return ""
     end
 
-    docs_html = docs_html .. "</div>"
-  end
-
-  -- link under plot ----------------------------------------------
-  local plot_link_html = ""
-  if link ~= "" then
-    local body = link
-    if not looks_like_html(body) then
-      body = md_to_html(body)
-    end
-    plot_link_html = string.format(
-      '<div class="shorty-link shorty-link-underplot mt-2">%s</div>',
-      body
-    )
-  end
-
-  -- text block (markdown in subtitle + description) --------------
-  local subtitle_html = ""
-  if subtitle ~= "" then
-    -- allow markdown in subtitle
-    subtitle_html = '<div class="shorty-subtitle">' .. md_to_html(subtitle) .. '</div>'
-  end
-
-  local description_html = ""
-  if description ~= "" then
-    -- allow markdown in description (**bold**, lists, `code`, etc.)
-    description_html = '<div class="shorty-description">' .. md_to_html(description) .. '</div>'
-  end
-
-  local text_block = string.format([[
-    <div class="shorty-textcol">
-      %s
-      %s
-      %s
-    </div>]],
-    (title ~= "" and ('<h2 class="card-title">' .. escfmt(title) .. '</h2>') or ""),
-    subtitle_html,
-    description_html
-  )
-
-  -- plot subtitle ------------------------------------------------
-  local plot_subtitle_html = ""
-  if plot_subtitle ~= "" then
-    plot_subtitle_html =
-      '<p class="shorty-plot-subtitle">' .. escfmt(plot_subtitle) .. '</p>'
-  end
-
-  -- plot block (with link + docs under plot) ---------------------
-  local plot_block = ""
-
-  if plot_html ~= "" then
+    -- widget path: lazy-load container
     if looks_like_widget(plot_html) then
-      -- widget path: lazy-load container
-      local id_suffix = tostring(math.random(100000, 999999))
-      local plot_id   = "plot-" .. id_suffix
-      local tpl_id    = "tpl-"  .. id_suffix
-      local height_attr = (height ~= "" and (' style="height:' .. escfmt(height) .. ';"') or "")
+      local id_suffix   = tostring(math.random(100000, 999999))
+      local plot_id     = "plot-" .. id_suffix
+      local tpl_id      = "tpl-"  .. id_suffix
+      local height_attr = ""
 
-      plot_block = string.format([[
+      if height and height ~= "" then
+        height_attr = ' style="height:' .. escfmt(height) .. ';"'
+      end
+
+      return string.format([[
       <div class="shorty-plotcol">
         %s
         <div id="%s" class="plot-frame"%s></div>
@@ -242,21 +156,15 @@ function shorty(args, kwargs, meta)
             io.observe(holder);
           })();
         </script>
-
-        %s
-        %s
       </div>]],
-        plot_subtitle_html,
+        plot_subtitle_html or "",
         escfmt(plot_id), height_attr,
-        escfmt(tpl_id),  escfmt(plot_html),
-        escfmt(plot_id), escfmt(tpl_id),
-        plot_link_html,
-        docs_html
+        escfmt(tpl_id),  plot_html,
+        escfmt(plot_id), escfmt(tpl_id)
       )
-
     else
       -- table / plain HTML path
-      plot_block = string.format([[
+      return string.format([[
       <div class="shorty-plotcol">
         %s
         <div class="plot-frame">
@@ -266,11 +174,237 @@ function shorty(args, kwargs, meta)
             </div>
           </div>
         </div>
-        %s
-        %s
       </div>]],
-        plot_subtitle_html,
-        plot_html,
+        plot_subtitle_html or "",
+        plot_html
+      )
+    end
+  end
+
+  -- inputs -------------------------------------------------------
+  local title         = U(kwargs["title"]         or "")
+  local subtitle      = U(kwargs["subtitle"]      or "")
+  local description   = U(kwargs["description"]   or "")
+  local link          = U(kwargs["link"]          or "")
+  local img           = U(kwargs["img"]           or "")
+
+  local plot_raw      = U(kwargs["plot"]          or "")
+  local plot2_raw     = U(kwargs["plot2"]         or "")
+  local plot_subtitle = U(kwargs["plot_subtitle"] or "")
+  local plot2_subtitle= U(kwargs["plot2_subtitle"] or "")
+
+  local height        = U(kwargs["height"]        or "")
+
+  -- optional image -----------------------------------------------
+  local img_html = ""
+  if img ~= "" then
+    img_html = string.format(
+      '<div class="shorty-image mb-3"><img src="%s" class="img-fluid" alt=""></div>',
+      escfmt(img)
+    )
+  end
+
+  -- plot HTML ----------------------------------------------------
+  local plot_html  = ""
+  local plot2_html = ""
+
+  if plot_raw ~= "" then
+    if looks_like_html(plot_raw) then
+      plot_html = plot_raw
+    else
+      plot_html = md_to_html(plot_raw)
+    end
+  end
+
+  if plot2_raw ~= "" then
+    if looks_like_html(plot2_raw) then
+      plot2_html = plot2_raw
+    else
+      plot2_html = md_to_html(plot2_raw)
+    end
+  end
+
+  local has_plot1 = (plot_html  ~= "" and plot_html  ~= nil)
+  local has_plot2 = (plot2_html ~= "" and plot2_html ~= nil)
+
+  ----------------------------------------------------------------
+  -- docs (doc1_title/doc1_text, …, doc6_title/doc6_text)
+  ----------------------------------------------------------------
+    ----------------------------------------------------------------
+  -- docs (doc1_title/doc1_text, …, doc6_title/doc6_text)
+  ----------------------------------------------------------------
+  local docs = {}
+  for i = 1, 6 do
+    local t      = U(kwargs["doc" .. i .. "_title"] or "")
+    local body_v = kwargs["doc" .. i .. "_text"]    -- keep original
+    local body_s = trim_to_string(body_v)           -- normalized for checks
+
+    -- only create an item if there is *something* real here
+    if t ~= "" or body_s ~= "" then
+      table.insert(docs, { title = t, body = body_v })
+    end
+  end
+
+  local docs_html = ""
+  if #docs > 0 then
+    local base_id = "shortydocs-" .. tostring(math.random(100000, 999999))
+    docs_html = '<div class="accordion shorty-docs mt-3" id="' .. escfmt(base_id) .. '">'
+
+    for idx, d in ipairs(docs) do
+      local item_id   = base_id .. "-item-" .. idx
+
+      -- --- body: HTML vs markdown -------------------------------
+      local body_src  = d.body or ""
+      local body_html = ""
+      if body_src ~= "" then
+        if looks_like_html(body_src) then
+          body_html = body_src
+        else
+          body_html = md_to_html(body_src)
+        end
+      end
+
+      -- wrap body like plots so tables are "contained"
+      if body_html ~= "" then
+        body_html = string.format([[
+<div class="plot-frame">
+  <div class="plot-area">
+    <div class="shorty-table-wrapper">
+      %s
+    </div>
+  </div>
+</div>]], body_html)
+      end
+
+      docs_html = docs_html .. string.format([[
+      <div class="accordion-item">
+        <strong class="accordion-header" id="%s-header">
+          <button class="accordion-button collapsed" type="button"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#%s-body"
+                  aria-expanded="false" aria-controls="%s-body">
+            %s
+          </button>
+        </strong>
+        <div id="%s-body" class="accordion-collapse collapse" aria-labelledby="%s-header">
+          <div class="accordion-body">
+            %s
+          </div>
+        </div>
+      </div>]],
+        escfmt(item_id),
+        escfmt(item_id),
+        escfmt(item_id),
+        escfmt(d.title),
+        escfmt(item_id),
+        escfmt(item_id),
+        escfmt(body_html)  -- escape % for string.format, keep HTML as-is
+      )
+    end
+
+    docs_html = docs_html .. "</div>"
+  end
+  ----------------------------------------------------------------
+  ----------------------------------------------------------------
+
+  -- link under plot(s) -------------------------------------------
+  local plot_link_html = ""
+  if link ~= "" then
+    local body = link
+    if not looks_like_html(body) then
+      body = md_to_html(body)
+    end
+    plot_link_html = string.format(
+      '<div class="shorty-link shorty-link-underplot mt-2">%s</div>',
+      body
+    )
+  end
+
+  -- text block (markdown in subtitle + description) --------------
+  local subtitle_html = ""
+  if subtitle ~= "" then
+    subtitle_html = '<div class="shorty-subtitle">' .. md_to_html(subtitle) .. '</div>'
+  end
+
+  local description_html = ""
+  if description ~= "" then
+    description_html = '<div class="shorty-description">' .. md_to_html(description) .. '</div>'
+  end
+
+  -- centered image -----------------------------------------------
+  img_html = ""
+  if img ~= "" then
+    img_html = string.format(
+      '<div class="shorty-image text-center mb-3"><img src="%s" class="img-fluid" alt=""></div>',
+      escfmt(img)
+    )
+  end
+
+  local text_block = string.format([[
+  <div class="shorty-textcol">
+    %s        <!-- title -->
+    %s        <!-- subtitle -->
+    %s        <!-- centered img -->
+    %s        <!-- description -->
+  </div>]],
+    (title ~= "" and ('<h2 class="card-title">' .. escfmt(title) .. '</h2>') or ""),
+    subtitle_html,
+    img_html,
+    description_html
+  )
+
+  -- plot subtitles -----------------------------------------------
+  local plot_subtitle_html  = ""
+  local plot2_subtitle_html = ""
+
+  if plot_subtitle ~= "" then
+    plot_subtitle_html =
+      '<p class="shorty-plot-subtitle">' .. escfmt(plot_subtitle) .. '</p>'
+  end
+  if plot2_subtitle ~= "" then
+    plot2_subtitle_html =
+      '<p class="shorty-plot-subtitle">' .. escfmt(plot2_subtitle) .. '</p>'
+  end
+
+  -- plot block (1 or 2 plots, link + docs under plots) ----------
+  local plot_block = ""
+
+  if has_plot1 or has_plot2 then
+    if has_plot1 and has_plot2 then
+      -- two plots side by side
+      local col1 = build_plotcol(plot_html,  plot_subtitle_html,  height)
+      local col2 = build_plotcol(plot2_html, plot2_subtitle_html, height)
+
+      plot_block = string.format([[
+<div class="grid shorty-plotrow">
+  <div class="g-col-12 g-col-md-6">
+    %s
+  </div>
+  <div class="g-col-12 g-col-md-6">
+    %s
+  </div>
+</div>
+%s
+%s]],
+        col1,
+        col2,
+        plot_link_html,
+        docs_html
+      )
+    else
+      -- single plot
+      local only_html          = has_plot1 and plot_html or plot2_html
+      local only_subtitle_html = has_plot1 and plot_subtitle_html or plot2_subtitle_html
+
+      local col = build_plotcol(only_html, only_subtitle_html, height)
+
+      plot_block = string.format([[
+      <div class="shorty-plotrow shorty-one-plot">
+        %s
+      </div>
+      %s
+      %s]],
+        col,
         plot_link_html,
         docs_html
       )
@@ -625,7 +759,7 @@ function readmore_end(args, kwargs, meta)
   </div>
   <div class="readmore__button-wrapper">
     <button type="button" class="readmore__toggle" aria-expanded="false" title="Læs mere">
-      <span class="readmore__icon">+</span>
+      <span class="readmore__icon"><i class="bi bi-plus"></i></span>
     </button>
   </div>
 </div>]])

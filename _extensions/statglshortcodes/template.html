@@ -96,7 +96,7 @@ $endfor$
 </body>
 
 <div class="kpi-grid">
-  <footer class="mt-5 pt-4 border-top">
+  <footer class="border-top">
   <div class="grid footergrid py-4">
     <!-- Contact -->
     <div class="g-col-12 g-col-md-4">
@@ -256,6 +256,11 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-
+<script src="/site.js"></script>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    if (window.statglInit) window.statglInit();
+  });
+</script>
 
 </html>
