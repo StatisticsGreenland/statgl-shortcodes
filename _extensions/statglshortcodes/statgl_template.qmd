@@ -1,0 +1,44 @@
+---
+title: "Titel"
+subtitle: "Undertekst"
+format: statglshortcodes-html
+execute:
+  echo: false
+  message: false
+  warning: false
+---
+
+```{r}
+library(tidyverse)
+library(statgl)
+```
+
+```{r}
+df1 <- statgl_fetch("BEDSTALL",
+  district = px_agg("BEXSTALLstørrelse.agg",
+    "Hovedstad",
+    "Hovedbosteder",
+    "Større bosteder",
+    "Bosteder",
+    "Mindre bosteder",
+    "Mindste bosteder"
+  ),
+  content = "fb",
+  .col_code = TRUE
+)
+
+p1 <- statgl_plot(df1, time, group = fct_inorder(district))
+```
+
+{{< shorty
+  title = "Demografisk forsørgerbyrde"
+  subtitle = "1977 - 2025"
+  description = "Den demografiske forsørgerbyrde beregnes som det matematiske forhold mellem den del af befolkningen, der ikke er tilknyttet arbejdsmarkedet og dermed skal forsørges, og forsørgerne, altså den arbejdsdygtige befolkning."
+  plot = '`r p1`'
+  link = "[Se tallene i Statistikbanken](https://bank.stat.gl:443/sq/285d1569-0136-49a8-9347-98158fa57300)"
+  doc1_title = "Her er en titel"
+  doc1_text = "Her kan der stå noget tekst"
+  doc2_title = "Her er en anden titel"
+  doc2_text = "Her kan der stå noget andet tekst"
+>}}
+
