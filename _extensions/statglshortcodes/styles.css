@@ -20,7 +20,7 @@
 
   /* Effects & shape */
   --shadow:       0 6px 18px rgba(0,0,0,.06);
-  --radius:       12px;
+  --radius:       24px;
 
   /* Icons */
   --icon-lg: 3rem;
@@ -45,8 +45,8 @@
     --text:         var(--ink);
     --text-strong:  #fff;
     --muted:        rgba(229,231,235,.72);
-    --panel:        #101214;
-    --paper:        #0c0d0e;
+    --panel:        #242525;
+    --paper:        #1a1a1a;
     --line:         rgba(255,255,255,.12);
     --panel-border: rgba(255,255,255,.12);
     --hairline:     rgba(255,255,255,.10);
@@ -70,10 +70,7 @@ a:hover{ text-decoration: underline; }
 .navbar{ background: var(--brand); }
 .container-xl, .container{ max-width: 1200px; }
 
-@media (prefers-reduced-motion: reduce){
-  *{ animation:none !important; transition:none !important; }
-}
-
+.tema-card,
 .pub-item.card {
   padding-bottom:1em;
   padding-left:1.1em;
@@ -118,8 +115,12 @@ a:hover{ text-decoration: underline; }
 }
 
 @media (prefers-color-scheme: dark){
-  .hero-banner{
-    background: linear-gradient(180deg, #141619 0%, #0c0d0e 100%);
+  .hero-banner {
+    background: linear-gradient(
+      180deg,
+      rgb(38, 38, 40) 0%,   /* cool navy-ish top */
+      var(--paper) 100%  
+    );
     color: var(--ink);
   }
   .hero-banner h1{ color: color-mix(in srgb, var(--brand) 90%, white 10%); }
@@ -139,6 +140,7 @@ a:hover{ text-decoration: underline; }
 .link-card,
 .feature-card,
 .panel-card,
+.tema-card,
 .pub-item.card,
 .contact-card{
   border-radius: var(--radius);
@@ -150,6 +152,7 @@ a:hover{ text-decoration: underline; }
 
 .sectioncard:hover,
 .link-card:hover,
+.tema-card:hover,
 .pub-item.card:hover,
 .contact-card:hover{
   transform: translateY(-2px);
@@ -165,7 +168,7 @@ a:hover{ text-decoration: underline; }
 .kpi-grid {
   max-width: 900px;
   margin-inline: auto;   /* centers the element */
-  padding: 1em;  /* vertical and horizontal padding */
+  padding: 1.5em;  /* vertical and horizontal padding */
   box-sizing: border-box;        /* include padding inside the width */
 }
 .kpi-grid .grid{ gap:1.25rem; }
@@ -291,7 +294,32 @@ a:hover{ text-decoration: underline; }
   -webkit-mask-image: none;
   mask-image: none;
 }
-.readmore.expanded .readmore__icon{ transform: rotate(45deg); }
+
+/* Make the icon live in a true square and center it */
+.readmore__icon{
+  display: inline-grid;
+  place-items: center;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+}
+
+/* Neutralize Bootstrap icon font quirks */
+.readmore__icon .bi{
+  display: block;
+  line-height: 1;
+  vertical-align: 0;         /* bootstrap icons often use -0.125em */
+  transform-origin: 50% 50%;
+}
+
+/* Rotate the glyph, not the wrapper */
+.readmore.expanded .readmore__icon .bi{
+  transform: rotate(45deg);
+}
+
+.readmore.expanded .readmore__icon .bi{
+  transform: translateX(-0.03em) rotate(45deg);
+}
 
 /* =========================
    11) CONTACT CARD
@@ -739,7 +767,7 @@ a:hover{ text-decoration: underline; }
     justify-content:flex-start !important;
     gap:1rem !important;
     text-align:left !important;
-    padding:1rem 1.25rem !important;
+    padding:2rem 1.25rem !important;
   }
   .sectioncard .sectioncard-icon{ font-size:2rem !important; margin:0 !important; }
   .sectioncard .sectioncard-textblock{
@@ -806,7 +834,6 @@ a:hover{ text-decoration: underline; }
 .shorty .card-body table,
 .panel-card .card-body .table,
 .shorty .card-body .table{
-  display: block;               /* allows overflow on the element itself */
   width: 100%;
   max-width: 100%;
   overflow-x: auto;             /* horizontal scroll if needed */
@@ -1069,7 +1096,9 @@ h3, .h3 {
 .link-card,
 .feature-card,
 .panel-card,
+.tema-card,
 .pub-item.card,
+.tema-listing,
 .contact-card{
   border-radius: var(--radius);
   background: var(--panel);
@@ -1194,4 +1223,281 @@ footer .footer-address {
 /* Optional: tighten line-height for multi-line items */
 footer li.footer-item {
   line-height: 1.3;
+}
+
+.shorty .shorty-table-wrapper {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shorty .shorty-table-wrapper table {
+  width: max-content;
+  min-width: 100%;
+  font-family: "Inter Tight", "Inter", sans-serif;
+  font-size: 0.9rem; /* small but extremely legible */
+}
+
+.shorty-plotrow.shorty-two-plots {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .shorty-plotrow.shorty-two-plots {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+/* Wrapper: one rounded container */
+.accordion {
+  --bs-accordion-border-color: #7d7d7d;
+  border: 1px solid var(--bs-accordion-border-color);
+  border-radius: var(--radius);
+  overflow: hidden;              /* clip inner corners */
+}
+
+/* Items themselves should NOT be rounded */
+.accordion-item {
+  border: 0;
+}
+
+/* Base button style */
+.accordion-button {
+  color: var(--ink);
+  background-color: var(--panel);
+  border-radius: 0 !important;   /* reset Bootstrap’s tricks */
+}
+
+/* Only top item: round top corners */
+.accordion-item:first-of-type .accordion-button {
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+/* Only bottom item: round bottom corners when closed or open */
+.accordion-item:last-of-type .accordion-button,
+.accordion-item:last-of-type .accordion-button.collapsed {
+  border-bottom-left-radius: var(--radius);
+  border-bottom-right-radius: var(--radius);
+}
+
+.accordion-item + .accordion-item .accordion-button {
+  border-top: 1px solid var(--bs-accordion-border-color);
+}
+
+/* Force caret to use your ink-muted or ink color */
+.accordion-button::after {
+  opacity: 1 !important;
+
+  /* Use an SVG mask to recolor the arrow */
+  background-image: none !important;
+  mask-image: var(--bs-accordion-btn-icon);
+  -webkit-mask-image: var(--bs-accordion-btn-icon);
+
+  background-color: var(--brand); 
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: 1.25rem;
+}
+
+.navbar .navbar-container>.navbar-nav {
+  order: 4;
+}
+
+table.kable tr.group > td {
+  color: var(--ink, #000) !important;
+  font-weight: 600;
+}
+
+table.statgl-crosstable-rule {
+  border-top: 2px solid #004459;
+  border-bottom: 2px solid #004459;
+  border-collapse: separate; /* usually default, but just in case */
+}
+
+.tema-card {
+  background: var(--panel);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tema-card-link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tema-card-thumbnail {
+  position: relative;
+  overflow: hidden;
+}
+
+.tema-card-thumbnail img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tema-eyebrow {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--brand);
+  color: white;
+}
+
+.tema-card-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.tema-card-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.tema-card-description {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted, #aaa);
+}
+
+/* Make each KPI column a flex container so margins don't collapse weirdly */
+.kpi-grid .grid > .g-col-12.g-col-md-6 {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Normalize the headings */
+.kpi-grid .grid > .g-col-12.g-col-md-6 > h2 {
+  margin: 0 0 1.75rem;  // same for Tema & Seneste nyt
+}
+
+/* Make sure the listing blocks don't add extra top margin */
+.kpi-grid .grid > .g-col-12.g-col-md-6 > #tema-listing,
+.kpi-grid .grid > .g-col-12.g-col-md-6 > #news-listing {
+  margin-top: 0;
+}
+
+.kpi-grid h2 {
+  margin-top: 0 !important;
+  margin-bottom: 1.75rem;
+}
+
+.tema-card-thumbnail {
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;              /* optional, keeps image tight */
+}
+
+.tema-card-thumbnail img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;      /* show entire image */
+  object-position: center;
+  border-radius: 0;         /* or keep if you want rounded top */
+}
+
+.input-group-text,
+.form-control,
+.form-control:focus {
+  color: var(--ink);
+  background-color: var(--panel);
+}
+
+/* Hide the left sidebar (but keep Quarto’s breadcrumb + layout working) */
+#quarto-sidebar,
+.quarto-sidebar {
+  display: none !important;
+  margin: 0 !important; 
+  padding: 0 !important;
+}
+
+/* Reclaim the space the sidebar normally reserves */
+#quarto-content {
+  margin-left: 0 !important;
+}
+
+/* If you have any extra left padding from the sidebar layout, kill it */
+body.nav-sidebar #quarto-content {
+  padding-left: 0 !important;
+}
+
+/* 1) Hide the sidebar + its glass overlay */
+#quarto-sidebar,
+#quarto-sidebar-glass {
+  display: none !important;
+}
+
+/* 2) Tell the layout that the sidebar is zero-width */
+body.nav-sidebar {
+  --quarto-sidebar-width: 0px !important;
+}
+
+/* 3) Remove any left offset the content gets in sidebar mode */
+body.nav-sidebar #quarto-content,
+body.nav-sidebar .page-columns {
+}
+
+/* Hide left sidebar + the glass overlay */
+#quarto-sidebar,
+#quarto-sidebar-glass {
+  display: none !important;
+}
+
+/* Tell Quarto the left column is zero */
+body.nav-sidebar {
+  --quarto-sidebar-width: 0px !important;
+}
+
+/* Rebuild the grid only for the main container that holds sidebar + main + margin */
+body.nav-sidebar #quarto-content.quarto-container.page-columns {
+  grid-template-columns: 0px minmax(0, 1fr) var(--quarto-margin-width) !important;
+}
+
+/* Make sure the main content sits in the middle column */
+body.nav-sidebar #quarto-document-content {
+  grid-column: 2 !important;
+}
+
+/* Keep the TOC/margin sidebar in the right column */
+body.nav-sidebar #quarto-margin-sidebar {
+  grid-column: 3 !important;
+}
+/* Add breathing room to main content */
+body.nav-sidebar #quarto-document-content {
+  padding-left: 1.5em;
+  padding-right: 1.5em;
+}
+
+/* Center body + TOC as a single constrained grid */
+body.nav-sidebar #quarto-content.quarto-container.page-columns {
+  width: min(900px, 100%);
+  margin-inline: auto;
+}
+/* Center the entire 900px block (main + TOC) as a grid item */
+body.nav-sidebar #quarto-content {
+  justify-self: center;
+}
+
+body.nav-sidebar #quarto-content {
+  justify-self: center;
+  width: min(900px, 100%);
+}
+body.nav-sidebar #quarto-content.quarto-container.page-columns {
+  margin-left: auto !important;
+  margin-right: auto !important;
 }

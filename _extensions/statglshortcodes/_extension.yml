@@ -1,13 +1,13 @@
 title: statglshortcodes
 author: Emil Malta
-version: 1.0.9011
+version: 1.0.9010
 quarto-required: ">=1.6.0"
 contributes:
   shortcodes:
     - statgl-shortcodes.lua
   formats:
     html:
-      template: template.html   
+      template: template.html   # 👈 use your template
       filters:
         - lang-flags.lua
       css:
