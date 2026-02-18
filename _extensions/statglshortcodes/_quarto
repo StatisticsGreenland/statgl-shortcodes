@@ -1,0 +1,7 @@
+project: 
+  type: website
+format: statglshortcodes-html
+execute:
+  echo: false
+  message: false
+  warning: false
