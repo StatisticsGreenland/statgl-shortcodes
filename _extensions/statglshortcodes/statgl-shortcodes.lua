@@ -186,10 +186,11 @@ function shorty(args, kwargs, meta)
   end
 
   -- helper: build a single plot column (no link/docs here) -------
-  local function build_plotcol(plot_html, plot_subtitle_html, height)
+  local function build_plotcol(plot_html, plot_subtitle_html, height, note_html)
     if not plot_html or plot_html == "" then
       return ""
     end
+    note_html = note_html or ""
 
     -- widget path: lazy-load container
     if looks_like_widget(plot_html) then
@@ -248,11 +249,13 @@ function shorty(args, kwargs, meta)
             io.observe(holder);
           })();
         </script>
+        %s
       </div>]],
         plot_subtitle_html or "",
         escfmt(plot_id), height_attr,
         escfmt(tpl_id),  plot_html,
-        escfmt(plot_id), escfmt(tpl_id)
+        escfmt(plot_id), escfmt(tpl_id),
+        note_html
       )
     else
       -- table / plain HTML path
@@ -266,9 +269,11 @@ function shorty(args, kwargs, meta)
             </div>
           </div>
         </div>
+        %s
       </div>]],
         plot_subtitle_html or "",
-        plot_html
+        plot_html,
+        note_html
       )
     end
   end
@@ -287,6 +292,10 @@ function shorty(args, kwargs, meta)
   local plot2_title   = U(kwargs["plot2_title"]   or "")
   local plot_subtitle = U(kwargs["plot_subtitle"] or "")
   local plot2_subtitle= U(kwargs["plot2_subtitle"] or "")
+  -- plot_note / plot2_note: small footnote under the figure or table
+  -- (source, break in series, definition). Plain text.
+  local plot_note     = U(kwargs["plot_note"]     or "")
+  local plot2_note    = U(kwargs["plot2_note"]    or "")
 
   local height        = U(kwargs["height"]        or "")
   local width         = U(kwargs["width"]         or "")
@@ -564,6 +573,12 @@ end
   end
   local plot_subtitle_html  = plot_head(plot_title,  plot_subtitle)
   local plot2_subtitle_html = plot_head(plot2_title, plot2_subtitle)
+  local function plot_foot(n)
+    if n == "" then return "" end
+    return '<p class="shorty-plot-note">' .. escfmt(n) .. '</p>'
+  end
+  local plot_note_html  = plot_foot(plot_note)
+  local plot2_note_html = plot_foot(plot2_note)
 
   -- plot block (1 or 2 plots, link + docs under plots) ----------
   local plot_block = ""
@@ -571,8 +586,8 @@ end
   if has_plot1 or has_plot2 then
     if has_plot1 and has_plot2 then
       -- two plots side by side
-      local col1 = build_plotcol(plot_html,  plot_subtitle_html,  height)
-      local col2 = build_plotcol(plot2_html, plot2_subtitle_html, height)
+      local col1 = build_plotcol(plot_html,  plot_subtitle_html,  height, plot_note_html)
+      local col2 = build_plotcol(plot2_html, plot2_subtitle_html, height, plot2_note_html)
 
       plot_block = string.format([[
 <div class="grid shorty-plotrow">
@@ -594,8 +609,9 @@ end
       -- single plot
       local only_html          = has_plot1 and plot_html or plot2_html
       local only_subtitle_html = has_plot1 and plot_subtitle_html or plot2_subtitle_html
+      local only_note_html     = has_plot1 and plot_note_html or plot2_note_html
 
-      local col = build_plotcol(only_html, only_subtitle_html, height)
+      local col = build_plotcol(only_html, only_subtitle_html, height, only_note_html)
 
       plot_block = string.format([[
       <div class="shorty-plotrow shorty-one-plot">

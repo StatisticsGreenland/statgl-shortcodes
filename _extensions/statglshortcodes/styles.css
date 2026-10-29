@@ -1738,6 +1738,80 @@ body.nav-sidebar #quarto-content.quarto-container.page-columns {
   }
 }
 
+/* ---------- Begreber: inline term lookup (site.js begreberInit) ---------- */
+button.begreb {
+  all: unset;
+  cursor: help;
+  color: inherit;
+  text-decoration: underline dotted var(--brand);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: .2em;
+}
+button.begreb:hover { text-decoration-style: solid; }
+button.begreb:focus-visible {
+  outline: 2px solid var(--brand-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.begreb-popover {
+  --bs-popover-max-width: min(22rem, calc(100vw - 2rem));
+  --bs-popover-bg: var(--panel);
+  --bs-popover-body-color: var(--ink);
+  --bs-popover-header-bg: var(--paper);
+  --bs-popover-header-color: var(--text-strong);
+  --bs-popover-border-color: var(--panel-border);
+  box-shadow: var(--shadow);
+}
+.begreb-popover .popover-body p:last-child { margin-bottom: 0; }
+
+/* ---------- Front-page notice (notice.yml, R/generate_notice.R) ---------- */
+.site-notice {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  width: min(900px, 100%);
+  margin: 1.25rem auto 0;
+  padding: 1rem 1.25rem;
+  background: var(--brand);
+  color: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.site-notice .notice-body { flex: 1; line-height: 1.45; }
+.site-notice .notice-body p { margin: 0; }
+.site-notice .notice-body p + p { margin-top: .5rem; }
+.site-notice .notice-label {
+  display: inline-block;
+  padding: .15rem .55rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,.18);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.site-notice a { color: #fff; text-decoration: underline; }
+.site-notice a:hover { text-decoration-thickness: 2px; }
+.site-notice .notice-close {
+  all: unset;
+  cursor: pointer;
+  padding: .1rem .4rem;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.site-notice .notice-close:hover { background: rgba(255,255,255,.18); }
+.site-notice .notice-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (prefers-color-scheme: dark) {
+  .site-notice {
+    background: var(--brand-ink);
+    box-shadow: none;
+    border: 1px solid rgba(255,255,255,.12);
+  }
+}
+
 /* ---------- Anchors for normal document headings ---------- */
 
 /* Quarto often puts ids on section, not only headings */
@@ -2404,6 +2478,13 @@ h6.shorty-toc-anchor {
 }
 .shorty .shorty-plotrow .shorty-plotcol > .plot-frame{
   margin-top: auto;
+}
+/* plot_note / plot2_note: footnote under the figure or table */
+.shorty .shorty-plot-note{
+  margin: .35rem 0 0;
+  font-size: var(--fs-xs);
+  line-height: 1.4;
+  color: var(--ink-soft);
 }
 
 /* Table captions (statgl_table / statgl_crosstable inside shorty).
