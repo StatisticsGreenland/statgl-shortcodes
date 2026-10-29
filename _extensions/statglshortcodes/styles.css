@@ -4,11 +4,12 @@
 :root{
   /* Brand */
   --brand:        #007F99;
+  --brand-ink:    #00586B;   /* a11y: brand for small text on paper/tinted surfaces (6:1) */
   --bs-primary:   var(--brand);
 
   /* Surfaces & text (light) */
   --ink:          #1f2937;
-  --ink-soft:     #6b7280;
+  --ink-soft:     #4b5563;   /* a11y: 4.5:1 on tinted cards too (was #6b7280) */
   --text:         var(--ink);
   --text-strong:  var(--ink);
   --muted:        var(--ink-soft);
@@ -23,8 +24,8 @@
   --radius:       24px;
 
   /* Icons */
-  --icon-lg: 3rem;
-  --icon-md: 2rem;
+  --icon-lg: 6rem;
+  --icon-md: 3.5rem;
 
   /* Type scale (sectioncard baseline) */
   --fs-xs:   .85rem;
@@ -57,6 +58,20 @@
 }
 
 /* =========================
+   1b) ICONS (Phosphor)
+   Font + glyph classes come from phosphor/phosphor.css (injected by the
+   phosphor-icons.lua filter). Bootstrap Icons stay available as a fallback
+   for legacy bi-* names without an alias.
+   ========================= */
+/* Sit inline icons on the text baseline the way Bootstrap Icons did. */
+.ph, .ph-thin, .ph-light, .ph-bold, .ph-fill, .ph-duotone{ vertical-align: -.125em; }
+/* Block-level icon slots: no baseline shift, solid brand blue. */
+.sectioncard-icon i, .feature-icon i, .contact-icon i, .shorty-icon i,
+.tema-card-icon i, .externcard-icon, .archive-card-icon, .pdf-publication-icon{
+  vertical-align: baseline; color: var(--brand); opacity: 1;
+}
+
+/* =========================
    2) BASE
    ========================= */
 body{
@@ -70,10 +85,14 @@ a:hover{ text-decoration: underline; }
 .navbar{ background: var(--brand); }
 .container-xl, .container{ max-width: 1200px; }
 
-.tema-card,
 .pub-item.card {
-  padding-bottom:1em;
-  padding-left:1.1em;
+  padding: 1em 1.1em;
+}
+/* The stretched link must not take part in the flow: as an inline element it
+   produced a stray line box that acted as "top padding" on linked cards. */
+.pub-item.card > a.stretched-link {
+  position: absolute;
+  inset: 0;
 }
 
 /* =========================
@@ -119,7 +138,7 @@ a:hover{ text-decoration: underline; }
     background: linear-gradient(
       180deg,
       rgb(38, 38, 40) 0%,   /* cool navy-ish top */
-      var(--paper) 100%  
+      var(--paper) 100%
     );
     color: var(--ink);
   }
@@ -142,7 +161,9 @@ a:hover{ text-decoration: underline; }
 .panel-card,
 .tema-card,
 .pub-item.card,
-.contact-card{
+.contact-card,
+.release-card,
+.archive-card{
   border-radius: var(--radius);
   background: var(--panel);
   border: 1px solid var(--line);
@@ -150,17 +171,25 @@ a:hover{ text-decoration: underline; }
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
 }
 
+a.card.KeyBox:hover,
 .sectioncard:hover,
 .link-card:hover,
 .tema-card:hover,
-.pub-item.card:hover,
-.contact-card:hover{
+.pub-item.card:has(a):hover,
+.contact-card:hover,
+.archive-card:hover{
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
   box-shadow:
     0 6px 16px rgba(0,0,0,.10),
     inset 0 0 0 2px color-mix(in srgb, var(--brand) 55%, transparent);
 }
+
+/* KPI and section cards are anchors — lift/border on hover is the tell, no link underline */
+a.card.KeyBox,
+a.card.KeyBox:hover,
+a.sectioncard,
+a.sectioncard:hover{ text-decoration: none; }
 
 /* =========================
    5) KPI CARDS
@@ -174,11 +203,40 @@ a:hover{ text-decoration: underline; }
 .kpi-grid .grid{ gap:1.25rem; }
 .card.KeyBox{
   display:flex; align-items:center; justify-content:center; text-align:center;
-  padding:1.5rem 1rem; min-height:9rem;
+  padding:1.5rem 1.5rem; min-height:9rem;
+  position:relative;
+  /* Equal heights in a row: the .g-col-* wrapper is a stretched grid item, so
+     100% fills it. Outside a grid the parent height is auto and this is a
+     no-op, which makes it safe as the default (pages no longer need
+     style="height:100%" on every kpicard). */
+  height:100%;
 }
-.KeyValue{ color:var(--ink); font-size:clamp(1.6rem,3vw,2rem); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; margin-bottom:.25rem;}
+.KeyValue{ color:var(--ink); font-size:clamp(1.6rem,3vw,2rem); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; margin-bottom:.25rem;}
 .KeyTitle{ color:var(--ink); font-size:.7rem; font-weight:700; margin-bottom:.25rem;}
 .KeySubtitle{ color:var(--ink-soft); font-size:.9rem; }
+.card.KeyBox:has(.KeyDelta){ padding-bottom:2.1rem; }
+.KeyDelta{ position:absolute; right:1rem; bottom:.7rem; text-align:right; line-height:1.2; }
+.KeyDeltaValue{ color:var(--ink-soft); font-size:.85rem; font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.KeyDeltaArrow{ font-size:.65em; vertical-align:.1em; }
+.KeyDeltaTitle{ color:var(--ink-soft); font-size:.6rem; font-weight:600; }
+
+/* Compact row layout on phones for KPI cards that take the full width
+   (.g-col-12): value left, title + subtitle stacked right. */
+@media (max-width: 767.98px){
+  .kpi-grid .g-col-12 > .card.KeyBox{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    grid-template-rows:auto auto;
+    column-gap:1rem; row-gap:.1rem;
+    align-items:center; justify-items:start; text-align:left;
+    padding:.85rem 1.1rem; min-height:0;
+  }
+  .kpi-grid .g-col-12 > .card.KeyBox .KeyValue{
+    grid-row:1 / 3; margin-bottom:0; min-width:6rem; font-size:1.6rem;
+  }
+  .kpi-grid .g-col-12 > .card.KeyBox .KeyTitle{ align-self:end; margin-bottom:0; font-size:.75rem; }
+  .kpi-grid .g-col-12 > .card.KeyBox .KeySubtitle{ align-self:start; font-size:.85rem; }
+}
 
 /* =========================
    6) SECTION CARDS — ALWAYS LEFT ALIGNED
@@ -197,8 +255,53 @@ a:hover{ text-decoration: underline; }
 }
 .sectioncard-icon{ flex:0 0 auto; font-size: var(--icon-lg); color: var(--brand); line-height:1; }
 .sectioncard .sectioncard-textblock{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; align-items:flex-start; }
-.section-title{ font-weight: 800; font-size: var(--fs-lg); line-height:1.2; margin:0 0 .15rem 0; color: var(--ink)}
+.section-title{ font-weight: 800; font-size: var(--fs-lg); line-height:1.2; margin:0 0 .15rem 0; color: var(--ink);
+  -webkit-hyphens: auto; hyphens: auto; overflow-wrap: anywhere; } /* long single words (Arbejdsmarkedstilknytning) on tablet widths */
 .sectioncard .card-text{ margin:0; font-size: var(--fs-sm); line-height:1.3; color: var(--ink-soft)}
+
+/* =========================
+   6b) TOPIC CARDS (ejs/topic-cards.ejs — section pages)
+   ========================= */
+.topic-cards{ gap: 1rem; }
+.topic-card{
+  position: relative;
+  display:flex; flex-direction:column; gap:.6rem;
+  padding: 1.1rem 1.15rem 1.1rem;
+  border-radius: 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  min-width: 0;
+  transition: transform .12s, border-color .12s;
+}
+.topic-card:hover{
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+}
+.topic-card-head{ display:flex; align-items:center; gap:.6rem; }
+.topic-card-icon{ flex:0 0 auto; font-size:1.75rem; line-height:1; color: var(--brand); }
+.topic-card-title{ font-weight:800; font-size: var(--fs-lg); line-height:1.2; color: var(--ink); }
+.topic-card-title:hover{ text-decoration:none; color: var(--brand); }
+.topic-card-text{ margin:-.25rem 0 0; font-size: var(--fs-sm); line-height:1.35; color: var(--ink-soft); }
+.topic-card-links{
+  list-style: disc; margin:0; padding:.6rem 0 0 1.25rem;
+  display:flex; flex-direction:column; gap:.3rem;
+  border-top: 1px solid var(--line);
+  color: var(--brand);                  /* bullet colour */
+}
+.topic-card-links li{ margin:0; padding-left:.15rem; }
+.topic-card-links a{
+  position: relative; z-index: 2;       /* above the stretched title link */
+  font-size: var(--fs-sm); font-weight:500; color: var(--ink); text-decoration:none;
+}
+.topic-card-links a:hover{ color: var(--brand); text-decoration: underline; }
+.topic-card-all{ margin-top:auto; padding:.2rem 0 0 1.4rem; }
+.topic-card-all a{
+  position: relative; z-index: 2;
+  font-size: var(--fs-xs); font-weight:600; color: var(--brand); text-decoration:none;
+}
+.topic-card-all a:hover{ text-decoration: underline; }
+@media (prefers-reduced-motion: reduce){ .topic-card{ transition:none; } }
 
 /* =========================
    7) LINK CARDS
@@ -207,7 +310,7 @@ a:hover{ text-decoration: underline; }
 .link-card .card-title a{ color: var(--ink); font-size:.8em; font-weight:800; }
 .link-card .card-title a:hover{ text-decoration:none; }
 .link-card .card-subtitle, .link-card .card-text, .link-card .text-muted{ color: var(--ink-soft) !important; }
-.link-card i.bi{ color: var(--ink-soft); opacity:.95; }
+.link-card i{ color: var(--ink-soft); opacity:.95; }
 
 /* =========================
    8) SHORTY / PANEL CARD
@@ -225,6 +328,38 @@ a:hover{ text-decoration: underline; }
 .panel-card .text-muted{ color: var(--muted) !important; }
 .plot-frame{ background: transparent; border: none; border-radius: 10px; padding: .25rem; }
 .plot-frame .html-widget, .plot-frame .highcharts-container, .plot-frame .highcharts-root{ height:100% !important; }
+
+/* Highcharts export menu — dark mode */
+@media (prefers-color-scheme: dark){
+  /* Dropdown container */
+  .highcharts-menu {
+    background: var(--panel) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: .375rem !important;
+    box-shadow: 0 4px 14px rgba(0,0,0,.5) !important;
+  }
+  .highcharts-menu hr { border-color: var(--hairline) !important; }
+  /* Menu items */
+  .highcharts-menu-item {
+    color: var(--text) !important;
+  }
+  .highcharts-menu-item:hover {
+    background: var(--brand) !important;
+    color: #fff !important;
+  }
+  /* Context button background (SVG rect) */
+  .highcharts-contextbutton .highcharts-button-box {
+    fill: var(--panel) !important;
+    stroke: var(--panel-border) !important;
+  }
+  .highcharts-contextbutton:hover .highcharts-button-box {
+    fill: color-mix(in srgb, var(--panel) 75%, var(--brand) 25%) !important;
+  }
+  /* Hamburger icon lines */
+  .highcharts-button-symbol {
+    stroke: var(--ink) !important;
+  }
+}
 
 /* Accordion inside panel */
 .panel-accordion .accordion-item{ border:1px solid var(--panel-border); border-radius:.5rem; overflow:hidden; }
@@ -249,7 +384,7 @@ a:hover{ text-decoration: underline; }
 .feature-icon i{ display:block; font-size: var(--icon-md); line-height:1; color: var(--brand); margin-top:.1rem; }
 .feature-text{ flex:1 1 auto; min-width:0; }
 
-.feature-eyebrow{ font-size:.8rem; font-weight:700; letter-spacing:.03em; color: var(--brand); margin-bottom:.15rem; }
+.feature-eyebrow{ font-size:.8rem; font-weight:700; letter-spacing:.03em; color: var(--brand-ink); margin-bottom:.15rem; }
 .feature-title{ font-size: var(--fs-2xl); font-weight:800; margin-bottom:.15rem; color: var(--text-strong); }
 .feature-subtitle{ font-size: var(--fs-sm); color: var(--ink-soft); margin-bottom:.35rem; }
 .feature-copy{ color: var(--text); }
@@ -260,7 +395,7 @@ a:hover{ text-decoration: underline; }
 
 @media (max-width: 768px){
   .feature-row{ flex-wrap: wrap; }
-  .feature-icon i{ font-size: 1.8rem; }
+  .feature-icon i{ font-size: 3rem; }
 }
 
 /* =========================
@@ -305,19 +440,18 @@ a:hover{ text-decoration: underline; }
 }
 
 /* Neutralize Bootstrap icon font quirks */
-.readmore__icon .bi{
+.readmore__icon i{
   display: block;
   line-height: 1;
-  vertical-align: 0;         /* bootstrap icons often use -0.125em */
   transform-origin: 50% 50%;
 }
 
 /* Rotate the glyph, not the wrapper */
-.readmore.expanded .readmore__icon .bi{
+.readmore.expanded .readmore__icon i{
   transform: rotate(45deg);
 }
 
-.readmore.expanded .readmore__icon .bi{
+.readmore.expanded .readmore__icon i{
   transform: translateX(-0.03em) rotate(45deg);
 }
 
@@ -330,7 +464,7 @@ a:hover{ text-decoration: underline; }
 .contact-title{ font-weight: 800; font-size: var(--fs-2xl); margin-bottom: .6rem; }
 .contact-row{ display:flex; align-items:flex-start; gap:1rem; }
 .contact-icon{ flex-shrink:0; display:flex; align-items:flex-start; justify-content:center; }
-.contact-icon i{ font-size: 2.4rem; line-height:1; color: var(--brand); margin-top:.15rem; }
+.contact-icon i{ font-size: 3.5rem; line-height:1; color: var(--brand); margin-top:.15rem; }
 .contact-text{ flex:1; min-width:0; }
 .contact-name{ font-weight:700; margin-bottom:.15rem; color: var(--ink)}
 .contact-role{ color: var(--ink-soft); font-weight:600; }
@@ -339,7 +473,7 @@ a:hover{ text-decoration: underline; }
 .contact-line i{ color: var(--ink-soft); }
 .contact-line a{ color: var(--brand); text-decoration:none; }
 .contact-line a:hover{ text-decoration: underline; }
-@media (max-width:520px){ .contact-icon i{ font-size:2rem; } }
+@media (max-width:520px){ .contact-icon i{ font-size:3rem; } }
 
 /* space between any two .card siblings */
 .card + .card { margin-top: 1rem; }
@@ -371,7 +505,7 @@ a:hover{ text-decoration: underline; }
   width:2.8rem; text-align:center; line-height:1.05;
 }
 .pub-datebox .day{ font-weight:800; font-size:1.05rem; margin:0; color: var(--brand); }
-.pub-datebox .mon{ font-weight:700; font-size:.7rem; text-transform:uppercase; opacity:.75; margin:0; color: var(--muted); }
+.pub-datebox .mon{ font-weight:700; font-size:.7rem; text-transform:uppercase; margin:0; color: var(--muted); }
 
 /* Text */
 .pub-text{ display:flex; flex-direction:column; gap:.1rem; min-width:0; }
@@ -400,6 +534,7 @@ a:hover{ text-decoration: underline; }
 .grid.g-3{ gap:1rem; }
 #quarto-content>*{ padding-top:14px; }
 #map{ border-radius:12px; max-height:70px; }
+.render-stamp{ margin:0 1em .25rem; text-align:right; font-size:.75rem; color:var(--ink-soft); } /* 1em = .footergrid margin, so the text lines up with the box edge */
 .footergrid{ max-width:1100px; margin-inline:auto; padding: var(--space-md) var(--space-sm); background: var(--panel); border-radius:12px; }
 .sidebar nav[role=doc-toc] ul>li>a.active,
 .sidebar nav[role=doc-toc] ul>li>ul>li>a.active{ border-left:1px solid var(--brand); color: var(--brand) !important; }
@@ -408,307 +543,61 @@ a:hover{ text-decoration: underline; }
 
 
 /* =========================
-   Feature "harmonica" / accordion
+   Feature accordion (canonical — harmonized with shorty spacing)
    ========================= */
-
-/* place + seam inside the card */
-.feature-card .feature-accordion{
-  margin: 0;                               /* hug the card edges */
-  border-top: 1px solid var(--hairline);   /* subtle seam from body */
-  overflow: hidden;                        /* keep rounded corners */
-  background: var(--panel);
-  border-color: var(--ink-soft);
-}
-
-/* items share the card’s chrome */
-.feature-accordion .accordion-item{
+.feature-accordion{
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
   background: transparent;
+  margin: 1rem 1rem 1.25rem;
+  overflow: hidden;
+}
+.feature-accordion .accordion-item{
   border: 0;
+  background: transparent;
 }
 .feature-accordion .accordion-item + .accordion-item{
   border-top: 1px solid var(--hairline);
 }
-
-/* header button */
 .feature-accordion .accordion-button{
-  background: var(--panel);
+  background: transparent;
   color: var(--text);
-  font-weight: 700;
-  font-size: var(--fs-base);
-  padding: .6rem .9rem;
+  font-weight: 600;
+  font-size: .95rem;
+  padding: .75rem 1.25rem;
   box-shadow: none;
+  border: none;
+  border-radius: 0;
 }
 .feature-accordion .accordion-button:hover{
   background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
 }
 .feature-accordion .accordion-button:not(.collapsed){
-  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
   color: var(--text-strong);
 }
 .feature-accordion .accordion-button:focus{
-  box-shadow: 0 0 0 .18rem color-mix(in srgb, var(--brand) 28%, transparent);
+  box-shadow: 0 0 0 .15rem color-mix(in srgb, var(--brand) 25%, transparent);
 }
-
-/* chevron uses token so it flips in dark mode */
 .feature-accordion .accordion-button::after{
   filter: var(--chev-filter);
 }
-
-/* panel body */
 .feature-accordion .accordion-body{
-  background: var(--panel);
+  background: transparent;
   color: var(--text);
-  padding: .75rem .9rem .9rem;
   border-top: 1px solid var(--hairline);
+  padding: .85rem 1.25rem 1rem;
   line-height: 1.45;
 }
-
-/* dark-mode keeps same tokens; no extra rules required */
-@media (prefers-color-scheme: dark){
-  /* optional: make the opened header a touch stronger in dark */
-  .feature-accordion .accordion-button:not(.collapsed){
-    background: color-mix(in srgb, var(--panel) 88%, var(--brand) 12%);
-  }
-}
-
-/* === Make feature accordion match shorty/panel defaults === */
-.feature-accordion{
-  /* same frame as .panel-accordion */
-  background: var(--panel);
-  border: 1px solid var(--panel-border);
-  border-radius: .5rem;
-  overflow: hidden;
-
-  /* same outer spacing you used on shorty */
-}
-
-/* identical item seams */
-.feature-accordion .accordion-item{
-  background: var(--panel);
-  border: 0;                /* Bootstrap reset */
-}
-.feature-accordion .accordion-item + .accordion-item{
-  border-top: 1px solid var(--hairline);
-}
-
-/* header button (copy of panel-accordion) */
-.feature-accordion .accordion-button{
-  background: var(--panel);
-  color: var(--text);
-  padding: .6rem 1rem;
-  box-shadow: none;
-}
-.feature-accordion .accordion-button:not(.collapsed){
-  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
-}
-.feature-accordion .accordion-button:focus{
-  box-shadow: none;
-}
-.feature-accordion .accordion-button::after{
-  filter: var(--chev-filter);
-}
-
-/* body (copy of panel-accordion) */
-.feature-accordion .accordion-body{
-  background: var(--panel);
-  color: var(--text);
-  padding: .75rem 1rem .9rem;
-  border-top: 1px solid var(--hairline);
-}
-
-/* optional: thin seam between card body and accordion */
 .feature-card .feature-accordion{
-  /* if you like the faint divider under charts/text */
-  box-shadow: 0 -1px 0 0 var(--hairline) inset;
+  /* Sits in .card-body below .fx-row, so it spans the full card width
+     regardless of icon/image; card-body padding provides the inset. */
+  margin: 1rem 0;
 }
-
-/* === Minimal outline style for feature accordion === */
-.feature-accordion{
-  border: 1px solid var(--hairline);
-  border-radius: .5rem;
-  background: transparent;
-  overflow: hidden;
-}
-
-/* Each item shares the same outline container */
-.feature-accordion .accordion-item{
-  border: 0;
-  background: transparent;
-}
-
-/* Header button — subtle outline look */
-.feature-accordion .accordion-button{
-  background: transparent;
-  color: var(--text);
-  font-weight: 600;
-  font-size: .95rem;
-  padding: .55rem .9rem;
-  box-shadow: none;
-  border: none;
-  border-radius: 0;
-}
-
-/* Hover and open states — faint panel tint */
-.feature-accordion .accordion-button:hover{
-  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
-}
-.feature-accordion .accordion-button:not(.collapsed){
-  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
-  color: var(--text-strong);
-}
-
-/* Chevron */
-.feature-accordion .accordion-button::after{
-  filter: var(--chev-filter);
-}
-
-/* Body content */
-.feature-accordion .accordion-body{
-  background: transparent;
-  color: var(--text);
-  border-top: 1px solid var(--hairline);
-  padding: .75rem .9rem .9rem;
-  line-height: 1.45;
-}
-
-/* Dark mode: soft white outline */
 @media (prefers-color-scheme: dark){
-  .feature-accordion{
-    border-color: rgba(255,255,255,.25);
-  }
-  .feature-accordion .accordion-button:hover{
-    background: rgba(255,255,255,.04);
-  }
-  .feature-accordion .accordion-button:not(.collapsed){
-    background: rgba(255,255,255,.08);
-  }
-}
-
-/* === Harmonized feature accordion (matches shorty spacing) === */
-.feature-accordion{
-  border: 1px solid var(--hairline);
-  border-radius: .5rem;
-  background: transparent;
-  margin: 1rem 1rem 1.25rem;   /* same inset as shorty */
-  overflow: hidden;
-}
-
-/* Each item shares the same outline container */
-.feature-accordion .accordion-item{
-  border: 0;
-  background: transparent;
-}
-
-/* Header button — same padding and rhythm as shorty */
-.feature-accordion .accordion-button{
-  background: transparent;
-  color: var(--text);
-  font-weight: 600;
-  font-size: .95rem;
-  padding: .75rem 1.25rem;      /* <-- this was missing */
-  box-shadow: none;
-  border: none;
-  border-radius: 0;
-}
-.feature-accordion .accordion-button:hover{
-  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
-}
-.feature-accordion .accordion-button:not(.collapsed){
-  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
-  color: var(--text-strong);
-}
-
-/* Chevron styling */
-.feature-accordion .accordion-button::after{
-  filter: var(--chev-filter);
-}
-
-/* Body — same inset + vertical rhythm as shorty */
-.feature-accordion .accordion-body{
-  background: transparent;
-  color: var(--text);
-  border-top: 1px solid var(--hairline);
-  padding: .85rem 1.25rem 1rem; /* aligned with header */
-  line-height: 1.45;
-}
-
-/* Dark mode: same outline softness */
-@media (prefers-color-scheme: dark){
-  .feature-accordion{
-    border-color: rgba(255,255,255,.25);
-  }
-  .feature-accordion .accordion-button:hover{
-    background: rgba(255,255,255,.04);
-  }
-  .feature-accordion .accordion-button:not(.collapsed){
-    background: rgba(255,255,255,.08);
-  }
-}
-
-/* === Harmonized feature accordion (matches shorty spacing) === */
-.feature-accordion{
-  border: 1px solid var(--hairline);
-  border-radius: .5rem;
-  background: transparent;
-  margin: 1rem 1rem 1.25rem;   /* same inset as shorty */
-  overflow: hidden;
-}
-
-/* Each item shares the same outline container */
-.feature-accordion .accordion-item{
-  border: 0;
-  background: transparent;
-}
-
-/* Header button — same padding and rhythm as shorty */
-.feature-accordion .accordion-button{
-  background: transparent;
-  color: var(--text);
-  font-weight: 600;
-  font-size: .95rem;
-  padding: .75rem 1.25rem;      /* <-- this was missing */
-  box-shadow: none;
-  border: none;
-  border-radius: 0;
-}
-.feature-accordion .accordion-button:hover{
-  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
-}
-.feature-accordion .accordion-button:not(.collapsed){
-  background: color-mix(in srgb, var(--panel) 95%, var(--brand) 5%);
-  color: var(--text-strong);
-}
-
-/* Chevron styling */
-.feature-accordion .accordion-button::after{
-  filter: var(--chev-filter);
-}
-
-/* Body — same inset + vertical rhythm as shorty */
-.feature-accordion .accordion-body{
-  background: transparent;
-  color: var(--text);
-  border-top: 1px solid var(--hairline);
-  padding: .85rem 1.25rem 1rem; /* aligned with header */
-  line-height: 1.45;
-}
-
-/* Dark mode: same outline softness */
-@media (prefers-color-scheme: dark){
-  .feature-accordion{
-    border-color: rgba(255,255,255,.25);
-  }
-  .feature-accordion .accordion-button:hover{
-    background: rgba(255,255,255,.04);
-  }
-  .feature-accordion .accordion-button:not(.collapsed){
-    background: rgba(255,255,255,.08);
-  }
-}
-
-.feature-card .feature-accordion {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+  .feature-accordion{ border-color: rgba(255,255,255,.2); }
+  .feature-accordion .accordion-button:hover{ background: rgba(255,255,255,.04); }
+  .feature-accordion .accordion-button:not(.collapsed){ background: rgba(255,255,255,.08); }
 }
 
 /* === Fix feature card icon alignment === */
@@ -769,7 +658,7 @@ a:hover{ text-decoration: underline; }
     text-align:left !important;
     padding:2rem 1.25rem !important;
   }
-  .sectioncard .sectioncard-icon{ font-size:2rem !important; margin:0 !important; }
+  .sectioncard .sectioncard-icon{ font-size:3.5rem !important; margin:0 !important; }
   .sectioncard .sectioncard-textblock{
     flex:1 1 auto; min-width:0;
     display:flex; flex-direction:column; align-items:flex-start; text-align:left !important;
@@ -789,10 +678,10 @@ a:hover{ text-decoration: underline; }
     padding:1.25rem 1.5rem !important;
   }
 
-  /* support both old (.sectioncard-icon) and new (.sc-icon .bi) markups */
+  /* support both old (.sectioncard-icon) and new (.sc-icon i) markups */
   .sectioncard .sectioncard-icon,
-  .sectioncard .sc-icon .bi{
-    font-size:3rem !important;
+  .sectioncard .sc-icon i{
+    font-size:var(--icon-lg) !important;
     line-height:1;
     margin:0 0 .25rem 0 !important;
   }
@@ -820,7 +709,7 @@ a:hover{ text-decoration: underline; }
   margin-bottom: 0;
 }
 
-.link-card i.bi {
+.link-card i {
   color: var(--brand);
 }
 
@@ -829,35 +718,32 @@ a:hover{ text-decoration: underline; }
   padding: 1em;
 }
 
-/* Keep wide tables inside the card with horizontal scroll */
-.panel-card .card-body table,
-.shorty .card-body table,
-.panel-card .card-body .table,
-.shorty .card-body .table{
-  width: 100%;
-  max-width: 100%;
-  overflow-x: auto;             /* horizontal scroll if needed */
-  -webkit-overflow-scrolling: touch; /* smooth scroll on iOS */
-  border-collapse: collapse;    /* avoid phantom extra width */
+/* Keep wide tables inside panel-cards with horizontal scroll.
+   Shorties use .shorty-table-wrapper instead — scoping overflow there
+   prevents the title/description from scrolling along with the table. */
+.panel-card .card-body {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Optional: keep cells on one line so the table doesn’t wrap to 10 lines */
+.panel-card .card-body table,
+.panel-card .card-body .table {
+  width: max-content;   /* expand to natural width so scroll kicks in */
+  min-width: 100%;      /* but fill the card when there’s room */
+  border-collapse: collapse;
+}
+
+/* Keep cells on one line so the table doesn’t wrap awkwardly */
 .panel-card .card-body table th,
-.panel-card .card-body table td,
-.shorty .card-body table th,
-.shorty .card-body table td{
+.panel-card .card-body table td {
   white-space: nowrap;
 }
 
-/* Optional: subtle hint there’s more to scroll */
-.panel-card .card-body table::after,
-.shorty .card-body table::after{
-  content: "";
-  position: sticky;
-  right: 0; top: 0; bottom: 0;
-  width: 12px;
-  pointer-events: none;
-  background: linear-gradient(to left, var(--panel), transparent);
+/* ...except cells given an explicit width (statgl's .first_col_width),
+   which need to wrap for the width to take effect */
+.panel-card .card-body table td[style*="width"],
+.shorty .shorty-table-wrapper table td[style*="width"] {
+  white-space: normal;
 }
 
 .feature-card + p {
@@ -900,7 +786,7 @@ h3, .h3 {
   }
   .archive-item:first-child { border-top: 0; }
 
-  .archive-item i.bi { font-size: 1.1rem; opacity: .9; color: var(--bs-danger); }
+  .archive-item i { font-size: 1.1rem; opacity: .9; color: var(--bs-danger); }
 
   /* 🔒 Kill Bootstrap's default blue link in this component */
   .archive-item a,
@@ -924,7 +810,7 @@ h3, .h3 {
   }
   .accordion-body { background: transparent; }
   .archive-item { border-color: var(--bs-border-color-translucent, rgba(255,255,255,.15)); }
-  .archive-item i.bi { color: #ff6b6b; }  /* gentle red that reads on dark */
+  .archive-item i { color: #ff6b6b; }  /* gentle red that reads on dark */
 }
 
 /* Smooth theme toggle (optional) */
@@ -967,7 +853,7 @@ h3, .h3 {
     .archive-item:first-child { border-top: 0; }
 
     /* Icon and links */
-    .archive-item i.bi { font-size: 1.05rem; color: var(--bs-danger); opacity: .9; }
+    .archive-item i { font-size: 1.05rem; color: var(--bs-danger); opacity: .9; }
     .archive-item a,
     .archive-item a:visited { color: inherit; text-decoration: none; }
     .archive-item a:hover   { color: var(--bs-primary); text-decoration: underline; }
@@ -979,10 +865,59 @@ h3, .h3 {
    but these increase specificity if your theme is stubborn. */
 [data-bs-theme="dark"] .card-archive,
 .quarto-dark .card-archive {
-  .cardish-accordion .archive-item { 
+  .cardish-accordion .archive-item {
     border-top-color: var(--bs-card-border-color, rgba(255,255,255,.15)) !important;
   }
 }
+
+/* =========================
+   HISTORICAL ARCHIVE GRID (archive-card.ejs)
+   ========================= */
+.archive-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+  grid-auto-rows:1fr;
+  gap:.9rem;
+  margin:1rem 0 1.75rem;
+}
+/* the global .card + .card sibling margin would shrink every card
+   except the first; the grid gap handles spacing here */
+.archive-grid .card + .card{ margin-top:0; }
+.archive-card{
+  position:relative;
+  display:block;
+  padding:.9rem 1rem 2rem;
+  min-height:6.5rem;
+  color:var(--ink);
+}
+.archive-card:hover,
+.archive-card:visited{
+  color:var(--ink);
+  text-decoration:none;
+}
+.archive-card-title{
+  font-size:var(--fs-sm);
+  font-weight:700;
+  line-height:1.25;
+  margin:0;
+  color:var(--ink);
+  word-break:normal;
+  overflow-wrap:break-word;
+}
+.archive-card-description{
+  font-size:var(--fs-sm);
+  color:var(--ink-soft);
+  margin:.35rem 0 0;
+}
+.archive-card-icon{
+  position:absolute;
+  right:.7rem;
+  bottom:.5rem;
+  font-size:1.15rem;
+  color:var(--bs-danger);
+  opacity:.85;
+}
+.quarto-dark .archive-card-icon{ color:#ff6b6b; }
 
 .card-body {
     flex: 1 1 auto;
@@ -997,9 +932,12 @@ h3, .h3 {
 }
 /* External link card — compact, responsive, wraps text properly */
 .externcard {
-  border-radius: var(--bs-border-radius-xxl);
-  background-color: var(--bs-card-bg);
-  color: var(--bs-card-color);
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+  color: var(--text);
   height: auto;
   align-self: start;
   max-width: 100%;
@@ -1024,7 +962,7 @@ h3, .h3 {
 
   .externcard-icon {
     font-size: 1.5rem;
-    color: var(--bs-primary);
+    color: var(--brand);
     flex-shrink: 0;
   }
 
@@ -1037,14 +975,14 @@ h3, .h3 {
     font-size: 1rem;
     line-height: 1.2;
     margin: 0;
-    color: var(--bs-body-color);
+    color: var(--ink);
     word-break: break-word;
   }
 
   .externcard-subtitle {
     font-size: 0.9rem;
     margin: 0;
-    color: var(--bs-secondary-color, #6c757d);
+    color: var(--ink-soft);
     word-break: break-word;
   }
 
@@ -1052,7 +990,7 @@ h3, .h3 {
   .externcard-chevron {
     flex-shrink: 0;
     font-size: 1.25rem;
-    color: var(--bs-primary);
+    color: var(--brand);
     margin-left: 0.5rem;
   }
 
@@ -1063,7 +1001,11 @@ h3, .h3 {
 
   &:hover,
   &:focus-within {
-    box-shadow: 0 0 0 0.15rem rgba(var(--bs-primary-rgb), 0.2);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+    box-shadow:
+      0 6px 16px rgba(0,0,0,.10),
+      inset 0 0 0 2px color-mix(in srgb, var(--brand) 55%, transparent);
   }
 }
 
@@ -1073,18 +1015,129 @@ h3, .h3 {
     padding: 0.75rem 1rem;
     gap: 0.75rem;
   }
-  .externcard .externcard-icon { font-size: 1.35rem; }
+  .externcard .externcard-icon { font-size: 2rem; }
   .externcard .externcard-chevron { font-size: 1.1rem; }
 }
 
-/* Dark mode adjustments */
+/* Dark mode — Quarto toggles data-bs-theme, not the OS media query,
+   so --ink stays at its light-mode value. Override text explicitly. */
 [data-bs-theme="dark"] .externcard,
 .quarto-dark .externcard {
-  .externcard-subtitle { color: var(--bs-secondary-color, #adb5bd); }
+  background: #242525;
+  border-color: rgba(255,255,255,.12);
+}
+[data-bs-theme="dark"] .externcard .externcard-title,
+.quarto-dark .externcard .externcard-title {
+  color: #e5e7eb;
+}
+[data-bs-theme="dark"] .externcard .externcard-subtitle,
+.quarto-dark .externcard .externcard-subtitle {
+  color: #a3a3a3 !important;
 }
 
 .externcard + p {
   margin: 1em;
+}
+
+/* =========================
+   PDF PUBLICATION CARD
+   Single panel-card with a download row and an optional
+   archive accordion at the bottom (matches shorty rhythm).
+   ========================= */
+.pdf-publication {
+  overflow: hidden;
+}
+
+.pdf-publication-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color .15s ease;
+}
+.pdf-publication-link:hover,
+.pdf-publication-link:focus-visible {
+  background: color-mix(in srgb, var(--panel) 92%, var(--brand) 8%);
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+.pdf-publication-icon {
+  font-size: 1.75rem;
+  color: var(--bs-danger, #dc3545);
+  flex-shrink: 0;
+}
+
+.pdf-publication-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pdf-publication-title {
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: .15rem;
+  line-height: 1.3;
+}
+
+.pdf-publication-subtitle {
+  font-size: .875rem;
+  color: var(--muted);
+}
+
+.pdf-publication-chevron {
+  font-size: 1.25rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* Archive accordion sits flush against the download row,
+   reusing the harmonized .feature-accordion treatment. */
+.pdf-publication-archive {
+  margin-top: 0;
+}
+
+.pdf-archive-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.pdf-archive-list li {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .55rem 0;
+  border-top: 1px solid var(--hairline);
+}
+.pdf-archive-list li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.pdf-archive-list li:last-child {
+  padding-bottom: 0;
+}
+.pdf-archive-list i {
+  font-size: 1rem;
+  color: var(--bs-danger, #dc3545);
+  flex-shrink: 0;
+  opacity: .9;
+}
+.pdf-archive-list a,
+.pdf-archive-list a:visited {
+  color: inherit;
+  text-decoration: none;
+}
+.pdf-archive-list a:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+[data-bs-theme="dark"] .pdf-archive-list i,
+.quarto-dark .pdf-archive-list i {
+  color: #ff6b6b;
 }
 
 .title {
@@ -1098,7 +1151,6 @@ h3, .h3 {
 .panel-card,
 .tema-card,
 .pub-item.card,
-.tema-listing,
 .contact-card{
   border-radius: var(--radius);
   background: var(--panel);
@@ -1196,7 +1248,7 @@ footer li {
   line-height: 1.4;
 }
 
-footer li i.bi {
+footer li i {
   width: 1.4rem;      /* fixed width for all icons */
   display: inline-block;
   text-align: center; /* keeps icons centered in their box */
@@ -1209,7 +1261,7 @@ footer li.footer-item {
 }
 
 /* Fixed-width icons so every line aligns */
-footer li.footer-item i.bi {
+footer li.footer-item i {
   flex: 0 0 1.4rem; /* adjust if needed */
   text-align: center;
   margin-top: .15rem; /* visually centers */
@@ -1225,7 +1277,10 @@ footer li.footer-item {
   line-height: 1.3;
 }
 
-.shorty .shorty-table-wrapper {
+/* Scroll container for tables: covers both the explicit .shorty-table-wrapper
+   (Lua shortcode path) and htmlwidget tables that land directly in .plot-frame. */
+.shorty .shorty-table-wrapper,
+.shorty .plot-frame {
   display: block;
   width: 100%;
   overflow-x: auto;
@@ -1235,9 +1290,37 @@ footer li.footer-item {
 .shorty .shorty-table-wrapper table {
   width: max-content;
   min-width: 100%;
+  border-collapse: collapse;
   font-family: "Inter Tight", "Inter", sans-serif;
   font-size: 0.9rem; /* small but extremely legible */
 }
+
+.shorty .shorty-table-wrapper table th,
+.shorty .shorty-table-wrapper table td {
+  white-space: nowrap;
+}
+
+/* ---------- Wide shorties (width="outset|page|screen") ----------
+   The site caps #quarto-content at min(900px, 100%), so Quarto's own
+   column-page classes are inert here. Instead, a wide shorty extends
+   symmetrically into the page gutters via negative inline margins.
+
+   --gutter is the real space available on each side of the 900px column
+   (minus 1rem breathing room). --extend is clamped to that gutter, so the
+   card never pushes past the viewport and never triggers horizontal scroll.
+   Below ~900px the gutter goes negative, max(0px, …) yields 0, and the card
+   falls back to normal width with the table's own inner scroll. */
+.shorty.shorty-wide {
+  --gutter: calc((100vw - 900px) / 2 - 1rem);
+  --extend: max(0px, min(var(--tier, 0px), var(--gutter)));
+  max-width: none;
+  margin-left: calc(-1 * var(--extend));
+  margin-right: calc(-1 * var(--extend));
+}
+
+.shorty.shorty-w-outset { --tier: 130px; }   /* ~ up to 1160px */
+.shorty.shorty-w-page   { --tier: 260px; }   /* ~ up to 1420px */
+.shorty.shorty-w-screen { --tier: 9999px; }  /* gutter-limited: fills the page */
 
 .shorty-plotrow.shorty-two-plots {
   display: grid;
@@ -1317,9 +1400,11 @@ table.statgl-crosstable-rule {
 }
 
 .tema-card {
+  position: relative;          /* anchor for .stretched-link */
+  padding: 0;
   background: var(--panel);
-  border-radius: 1.5rem;
-  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1336,12 +1421,44 @@ table.statgl-crosstable-rule {
 .tema-card-thumbnail {
   position: relative;
   overflow: hidden;
+  height: 240px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  container-type: inline-size;   /* lets the icon size follow the card width */
+}
+@media (max-width: 767.98px){
+  .tema-card-thumbnail { height: 180px; }
 }
 
 .tema-card-thumbnail img {
   display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* icon: frontmatter alternative to image: on tema pages
+   (space-separated list renders several glyphs side by side) */
+.tema-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
   width: 100%;
-  height: auto;
+  height: 100%;
+  background: color-mix(in srgb, var(--brand) 10%, var(--panel));
+  color: var(--brand);
+  /* never wider than the card: 7rem on desktop, shrinks with the card width */
+  font-size: min(7rem, 30cqw);
+  line-height: 1;
+}
+/* two or three glyphs side by side share the width */
+.tema-card-icon:has(i:nth-child(2)) { font-size: min(6rem, 24cqw); }
+.tema-card-icon:has(i:nth-child(3)) { font-size: min(5.5rem, 20cqw); }
+
+.tema-card .stretched-link::after {
+  z-index: 2;                  /* above the thumbnail/eyebrow */
 }
 
 .tema-eyebrow {
@@ -1362,13 +1479,13 @@ table.statgl-crosstable-rule {
 }
 
 .tema-card-title {
-  margin: 0 0 0.5rem;
+  margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
 }
 
 .tema-card-description {
-  margin: 0;
+  margin: 0.5rem 0 0;
   font-size: 0.9rem;
   color: var(--muted, #aaa);
 }
@@ -1381,7 +1498,7 @@ table.statgl-crosstable-rule {
 
 /* Normalize the headings */
 .kpi-grid .grid > .g-col-12.g-col-md-6 > h2 {
-  margin: 0 0 1.75rem;  // same for Tema & Seneste nyt
+  margin: 0 0 1.75rem; 
 }
 
 /* Make sure the listing blocks don't add extra top margin */
@@ -1395,20 +1512,12 @@ table.statgl-crosstable-rule {
   margin-bottom: 1.75rem;
 }
 
-.tema-card-thumbnail {
-  height: 300px;
+/* Full-width row under the two columns (front-page calendar): same gap
+   above its heading as the grid gap plus the column's own spacing. */
+.kpi-grid .grid > .g-col-12.kpi-full {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0;              /* optional, keeps image tight */
-}
-
-.tema-card-thumbnail img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;      /* show entire image */
-  object-position: center;
-  border-radius: 0;         /* or keep if you want rounded top */
+  flex-direction: column;
+  margin-top: 1.75rem;
 }
 
 .input-group-text,
@@ -1463,9 +1572,41 @@ body.nav-sidebar {
   --quarto-sidebar-width: 0px !important;
 }
 
-/* Rebuild the grid only for the main container that holds sidebar + main + margin */
+/* Rebuild the grid only for the main container that holds sidebar + main + margin.
+   The TOC column needs a fixed width. It used to be var(--quarto-margin-width),
+   which Quarto never defines: the declaration was invalid at computed time, the
+   grid fell back to auto columns sized by content, and wide tables in the body
+   (the docs/ method pages especially) squeezed the TOC to a sliver.
+   Below 992px the margin sidebar is not a column, so keep the old (implicit)
+   behaviour there. */
+body.nav-sidebar {
+  --statgl-toc-width: 220px;
+}
 body.nav-sidebar #quarto-content.quarto-container.page-columns {
-  grid-template-columns: 0px minmax(0, 1fr) var(--quarto-margin-width) !important;
+  grid-template-columns: none !important;
+}
+/* Pages without a TOC: pin the (hidden) sidebar track to 0. With `none` both
+   tracks are auto, and when the body's max-content width drops below 900px
+   (e.g. the release calendar filtered to a subject with short cards) the
+   leftover is split between the tracks, so main shifts right and narrows. */
+body.nav-sidebar #quarto-content.quarto-container.page-columns:not(:has(#quarto-margin-sidebar nav[role="doc-toc"])) {
+  grid-template-columns: 0px minmax(0, 1fr) !important;
+}
+/* Quarto keeps the margin sidebar visible from 768px up (it is display:none
+   below), so the fixed TOC track must apply from 768px too. With `none` in the
+   768-991px band the tracks were content-sized and long TOC entries took about
+   half the width, squeezing the body. Narrower track on tablets. */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  body.nav-sidebar { --statgl-toc-width: 190px; }
+}
+@media (min-width: 768px) {
+  /* Only pages that actually have a TOC get the column, so pages without one
+     keep the full 900px body. */
+  body.nav-sidebar #quarto-content.quarto-container.page-columns:has(#quarto-margin-sidebar nav[role="doc-toc"]) {
+    grid-template-columns: 0px minmax(0, 1fr) var(--statgl-toc-width) !important;
+  }
+  body.nav-sidebar #quarto-margin-sidebar { min-width: 0; }
+  body.nav-sidebar #quarto-margin-sidebar nav[role="doc-toc"] a { overflow-wrap: anywhere; }
 }
 
 /* Make sure the main content sits in the middle column */
@@ -1496,8 +1637,997 @@ body.nav-sidebar #quarto-content {
 body.nav-sidebar #quarto-content {
   justify-self: center;
   width: min(900px, 100%);
+  /* justify-self only centres a block-level box in Chrome. Safari (incl. iPad)
+     ignores it, which left page-layout: custom (the three front pages) flush
+     left, since the margin-inline rules below only match .page-columns. */
+  margin-inline: auto !important;
 }
 body.nav-sidebar #quarto-content.quarto-container.page-columns {
   margin-left: auto !important;
   margin-right: auto !important;
+}
+
+/* ---------- Mobile TOC: horizontal chip row ----------
+   Quarto hides #quarto-margin-sidebar below 768px and moves the TOC nowhere,
+   so phones had no page navigation at all. Keep the margin sidebar, put it in
+   its own grid row after the body, stuck to the bottom of the viewport, and lay
+   the top-level TOC entries out as a horizontally scrolling row of chips.
+   Quarto's own scrollspy keeps `.active` in step with the viewport, so this is
+   CSS only. Nested levels are dropped. */
+@media (max-width: 767.98px) {
+  body.nav-sidebar #quarto-content.quarto-container.page-columns:has(#quarto-margin-sidebar nav[role="doc-toc"]) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  body.nav-sidebar #quarto-content.quarto-container.page-columns:has(#quarto-margin-sidebar nav[role="doc-toc"]) #quarto-document-content {
+    grid-column: 1 !important;
+    grid-row: 1;
+  }
+  body.nav-sidebar #quarto-margin-sidebar:has(nav[role="doc-toc"]) {
+    display: block !important;
+    grid-column: 1 !important;
+    grid-row: 2;
+    align-self: end;
+    position: sticky;
+    /* quarto.js writes inline top/max-height for the desktop sticky offset;
+       override it and stick to the bottom edge instead. */
+    top: auto !important;
+    bottom: 0;
+    max-height: none !important;
+    overflow: visible !important;
+    z-index: 1020 !important;
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    border-top: 1px solid var(--hairline);
+    transition: transform .2s ease-out;
+  }
+  /* Follow the header: quarto-nav.js toggles .sidebar-unpinned on every
+     .sidebar from its Headroom callbacks (scroll down hides, scroll up shows). */
+  body.nav-sidebar #quarto-margin-sidebar.sidebar-unpinned:has(nav[role="doc-toc"]) {
+    transform: translateY(100%);
+  }
+  body.nav-sidebar #quarto-margin-sidebar.notransition { transition: none; }
+  @media (prefers-reduced-motion: reduce) {
+    body.nav-sidebar #quarto-margin-sidebar { transition: none; }
+  }
+  /* Bootstrap's quarto layer hides nav[role=doc-toc] below 768px. */
+  #quarto-margin-sidebar nav[role="doc-toc"] { display: block !important; }
+  #quarto-margin-sidebar #toc-title { display: none; }
+  #quarto-margin-sidebar nav[role="doc-toc"] > ul {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: .375rem;
+    margin: 0;
+    padding: .5rem 1rem;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 1rem;
+  }
+  #quarto-margin-sidebar nav[role="doc-toc"] > ul::-webkit-scrollbar { display: none; }
+  #quarto-margin-sidebar nav[role="doc-toc"] > ul > li {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0;
+    scroll-snap-align: start;
+  }
+  #quarto-margin-sidebar nav[role="doc-toc"] ul ul { display: none; }
+  #quarto-margin-sidebar nav[role="doc-toc"] > ul > li > a {
+    display: inline-block;
+    white-space: nowrap;
+    padding: .3rem .8rem;
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    background: var(--panel);
+    color: var(--ink) !important;
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+    text-decoration: none;
+  }
+  #quarto-margin-sidebar nav[role="doc-toc"] > ul > li > a.active {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff !important;
+  }
+  #quarto-margin-sidebar nav[role="doc-toc"] > ul > li > a:focus-visible {
+    outline: 2px solid var(--brand-ink);
+    outline-offset: 2px;
+  }
+}
+
+/* ---------- Anchors for normal document headings ---------- */
+
+/* Quarto often puts ids on section, not only headings */
+section[id],
+h1[id],
+h2[id],
+h3[id],
+h4[id],
+h5[id],
+h6[id] {
+  scroll-margin-top: 6rem;
+}
+
+
+/* ---------- Anchors inside shorty cards ---------- */
+
+.shorty .card-title[id] {
+  scroll-margin-top: 6rem;
+}
+
+
+/* ---------- Optional: any element with an id ---------- */
+/* (useful if you sometimes anchor divs like <div id="contact">) */
+
+[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* Desktop-only sticky navbar (keep current mobile behavior) */
+@media (min-width: 992px) {
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+  }
+}
+
+/* Explicitly keep mobile/tablet as-is */
+@media (max-width: 991.98px) {
+  .navbar {
+    position: static; /* or whatever your current default is */
+  }
+}
+
+@media (min-width: 992px) {
+  h2, h3, h4, h5, [id] {
+    scroll-margin-top: 90px; /* adjust to your navbar height */
+  }
+}
+
+/* Make the anchor behave like your card container */
+a.tema-card {
+  display: block;
+  height: 100%;
+  text-decoration: none;
+  color: inherit;
+  padding: 1em;
+}
+
+/* Remove the default inner link outline */
+a.tema-card:focus {
+  outline: none;
+}
+
+/* Full-card highlight */
+a.tema-card:focus-visible {
+  outline: 3px solid var(--bs-primary);
+  outline-offset: 2px;
+  border-radius: 0.75rem; /* match your card rounding */
+}
+
+
+.pub-item {
+  border-radius: 0.75rem; /* match your card rounding */
+}
+
+/* kill default focus outline on the invisible stretched link */
+.pub-item .stretched-link:focus {
+  outline: none;
+}
+
+/* show focus on the entire card */
+.pub-item:focus-within {
+  outline: 3px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- Release calendar filter toolbar ---------- */
+.release-filter { margin-bottom: 1.25rem; }
+.release-filter-row {
+  display: grid;
+  /* Fixed tracks for the two selects: Safari sizes a select to its
+     *selected* option, so `auto` tracks shifted the whole row whenever a
+     long subject (e.g. a KL emne) was picked. */
+  grid-template-columns: minmax(0, 1fr) 15rem 11rem;
+  gap: .5rem;
+  align-items: center;
+}
+.release-search { position: relative; min-width: 0; }
+.release-search i {
+  position: absolute; left: .85rem; top: 50%; transform: translateY(-50%);
+  color: var(--muted); pointer-events: none;
+}
+.release-search .form-control { padding-left: 2.3rem; }
+.release-select { min-width: 0; }
+.release-filter .form-control,
+.release-filter .form-select {
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background-color: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.release-filter .form-select {
+  width: 100%;
+  padding-right: 2.5rem;       /* room for the arrow */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;     /* selected label longer than the track */
+}
+.release-filter .form-control::placeholder { color: var(--muted); opacity: 1; }
+.release-filter .form-control:focus,
+.release-filter .form-select:focus {
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+  box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--brand) 20%, transparent);
+}
+.release-filter-meta {
+  display: flex; justify-content: flex-end; align-items: center; gap: .25rem;
+  margin-top: .5rem; min-height: 1.5rem;
+  font-size: .85rem; color: var(--meta);
+}
+.release-filter .release-clear { padding: 0 .25rem; font-size: .85rem; color: var(--brand); text-decoration: none; }
+.release-filter .release-clear:hover { text-decoration: underline; }
+@media (prefers-color-scheme: dark) {
+  /* Bootstrap's select arrow is a dark SVG; swap it for a light one */
+  .release-filter .form-select {
+    --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  }
+  .release-filter .form-select option { background: var(--panel); color: var(--ink); }
+}
+@media (max-width: 575.98px) {
+  .release-filter-row { grid-template-columns: 1fr 1fr; }
+  .release-search { grid-column: 1 / -1; }
+  .release-filter .form-select { width: 100%; }
+}
+
+/* ---------- Release calendar cards ---------- */
+:root {
+  /* meta = text used for dates, table descriptions, count — must stay legible
+     in both themes (≈ WCAG AA on the panel background). */
+  --meta: color-mix(in srgb, var(--text) 70%, transparent);
+  /* Warm accent (canonical statgl `palette = "orange"`) — used for
+     delayed-publication indicators and any other warm accents. */
+  --brand-warm: #faa41a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --meta: color-mix(in srgb, var(--text) 80%, transparent);
+  }
+}
+
+.release-listing .release-cards .release-item .release-card {
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.release-listing .release-cards .release-item .release-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--line));
+  box-shadow:
+    0 12px 28px rgba(0,0,0,.08),
+    inset 0 0 0 1px color-mix(in srgb, var(--brand) 25%, transparent);
+}
+.release-listing .release-subject {
+  letter-spacing: .04em;
+  color: var(--brand);
+}
+.release-listing .release-title {
+  color: var(--text-strong);
+  line-height: 1.3;
+}
+.release-listing .release-date {
+  color: var(--meta);
+}
+.release-listing .release-date i {
+  opacity: .9;
+}
+.release-listing .release-badge {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.release-listing .release-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem .4rem;
+}
+.release-listing .release-pages-label {
+  color: var(--meta);
+  margin-right: .15rem;
+}
+.release-listing .release-page-chip {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--brand-ink);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.release-listing .release-page-chip:hover {
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  text-decoration: underline;
+}
+/* Two aligned columns: table id | description. The grid sits on the list and
+   each li contributes its two children, so the id column is as wide as the
+   longest id in that card. */
+.release-listing .release-tables {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 1.25rem;
+  row-gap: .3rem;
+  padding-left: 0;
+  margin: 0;
+  list-style: none;
+  font-size: .9rem;
+}
+.release-listing .release-tables li {
+  display: contents;
+  color: var(--meta);
+}
+.release-listing .release-table-id {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.release-listing .release-table-name {
+  color: var(--meta);
+  overflow-wrap: anywhere;
+}
+.release-listing .release-tables a {
+  color: var(--brand);
+}
+.release-listing .release-tables a:hover {
+  text-decoration: underline;
+}
+.release-listing .release-count {
+  color: var(--meta);
+}
+.release-listing .release-empty {
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  color: var(--meta);
+}
+
+
+.release-meta {
+  color: var(--meta);
+  display: flex; flex-wrap: wrap; column-gap: 1.25rem; row-gap: .15rem;  /* two spans were touching on desktop */
+}
+
+/* AI-translation note on generated en twins (template.html, i18n.source).
+   Rendered right after $body$, so it sits in the content column and shares its
+   width and left edge with the page text, TOC layout included. No rule: the
+   content column is wider than the footer panel, and an edge there looks off. */
+.ai-note {
+  color: var(--ink-soft);
+  display: flex; gap: .5rem; align-items: baseline;
+  margin: 3rem 0 0;
+}
+.ai-note i { flex: 0 0 auto; }
+
+.release-listing .release-delayed {
+  color: var(--brand-warm);
+  font-weight: 600;
+}
+.release-listing .release-delayed i {
+  opacity: .9;
+}
+
+/* Screen: hidden */
+.print-footer { display: none; }
+
+@media print {
+
+/* typografi */
+body { font-size: 11pt; line-height: 1.35; padding-bottom: 18mm; }
+a { color: inherit; text-decoration: none; }
+
+/* overskrifter */
+h1, h2, h3 { break-after: avoid-page; page-break-after: avoid; }
+h1, h2, h3 { orphans: 3; widows: 3; }
+
+/* undgå split */
+figure, img, pre, blockquote { break-inside: avoid; page-break-inside: avoid; }
+table { break-inside: avoid; page-break-inside: avoid; }
+tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+
+/* callouts/cards */
+.callout, .card, .kpi, .kpi-card { break-inside: avoid; page-break-inside: avoid; }
+
+/* luft før sektion */
+h2 { margin-top: 18pt; }
+
+/* manuel sideskift */
+.pagebreak{
+  break-before: page;
+  page-break-before: always;
+  display: block;
+  height: 0;
+}
+
+/* footer */
+.print-footer {
+    display: block;
+
+    right: 10mm;
+    bottom: 8mm;
+    left: auto;
+
+    text-align: right;
+    font-size: 9pt;
+    line-height: 1.2;
+    color: #666;
+
+    background: transparent;
+    border: none;
+    padding: 0;
+
+    z-index: 1;
+    pointer-events: none; /* prevents selection weirdness */
+  }
+
+
+  .kpi-grid > footer.border-top {
+    display: none !important;
+  }
+
+
+
+}
+
+.pct-card .card-title {
+  margin-bottom: 0.25rem;
+}
+
+.pct-card .form-range {
+  min-width: 0;
+}
+
+.pct-card .pct-guess-value {
+  min-width: 3.5rem;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--bs-body-color);
+}
+
+.pct-card .pct-main-result {
+  font-size: 1.05rem;
+  margin: 0 0 0.35rem 0;
+}
+
+.pct-card .pct-bar-wrap {
+  margin-top: 0.25rem;
+}
+
+.pct-card .pct-bar {
+  position: relative;
+  display: flex;
+  height: 40px;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+
+.pct-card .pct-segment {
+  flex: 1 1 0;
+  border-right: 1px solid rgba(255,255,255,0.35);
+}
+
+.pct-card .pct-segment:nth-child(1)  { background: #e8f0f9; }
+.pct-card .pct-segment:nth-child(2)  { background: #d1e2f3; }
+.pct-card .pct-segment:nth-child(3)  { background: #b9d4ed; }
+.pct-card .pct-segment:nth-child(4)  { background: #a2c6e7; }
+.pct-card .pct-segment:nth-child(5)  { background: #8ab8e1; }
+.pct-card .pct-segment:nth-child(6)  { background: #73aadb; }
+.pct-card .pct-segment:nth-child(7)  { background: #5c9cd5; }
+.pct-card .pct-segment:nth-child(8)  { background: #458ecf; }
+.pct-card .pct-segment:nth-child(9)  { background: #2d80c9; }
+.pct-card .pct-segment:nth-child(10) { background: #1672c3; border-right: 0; }
+
+.pct-card .pct-marker {
+  position: absolute;
+  top: -6px;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 52px;
+  background: var(--brand, #003366);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.18);
+}
+
+.pct-card .pct-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color, #777);
+  margin-top: 0.4rem;
+}
+
+.pct-card .btn-primary {
+  background: var(--brand, #003366);
+  border-color: var(--brand, #003366);
+}
+
+.pct-card .btn-primary:hover,
+.pct-card .btn-primary:focus {
+  background: var(--brand, #003366);
+  border-color: var(--brand, #003366);
+}
+
+.pct-card .btn-outline-secondary {
+  border-color: var(--hairline);
+}
+
+/* =========================
+   KPI GRID SPACING
+   .grid has no external margin by default, so prose following a KPI
+   row was crammed — patched site-wide with <br> hacks. This fixes it.
+   ========================= */
+.grid:has(.card.KeyBox) {
+  margin-bottom: 1.75rem;
+}
+
+/* =========================
+   DOC CARDS (da/docs, kl/docs index)
+   feature-card surface in a two-column grid; copy clamped to three lines
+   so every card has the same height. Uses existing tokens only.
+   ========================= */
+.doc-listing{ margin-bottom: .5rem; }
+.doc-card{ position: relative; }
+.doc-card .feature-title{ font-size: var(--fs-xl); line-height: 1.25; margin-bottom: .45rem; }
+.doc-card .feature-subtitle{ margin-bottom: .5rem; }
+.doc-card .doc-card-copy p{
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.doc-card:hover .feature-title a{ color: var(--brand); text-decoration: none !important; }
+.quarto-listing:has(.doc-listing){ margin-bottom: 0; }
+section.doc-section-title{ margin-top: 1.5rem; }
+h3.doc-section-title{
+  display: flex; align-items: baseline; gap: .6rem; flex-wrap: wrap;
+  margin-top: 0; margin-bottom: .9rem;
+}
+h3.doc-section-title .doc-section-link{
+  font-size: var(--fs-sm); font-weight: 600; color: var(--brand); text-decoration: none;
+}
+h3.doc-section-title .doc-section-link:hover{ text-decoration: underline; }
+
+/* =========================
+   FINAL / DRAFT STATUS
+   Add final: true / false to a page's frontmatter to colour its listing card.
+   ========================= */
+.card--final {
+  background: color-mix(in srgb, var(--panel) 82%, #198754 18%) !important;
+  border-color: color-mix(in srgb, var(--line) 50%, #198754 50%) !important;
+}
+.card--draft {
+  background: color-mix(in srgb, var(--panel) 82%, #dc3545 18%) !important;
+  border-color: color-mix(in srgb, var(--line) 50%, #dc3545 50%) !important;
+}
+
+/* =========================
+   Knitr chunk output inside a Bootstrap .grid
+   -------------------------
+   knitr wraps R chunk output in <div class="cell"><div class="cell-output-display">
+   …</div></div>. Bootstrap's CSS Grid only lays out *direct* children as
+   grid items, so .g-col-* elements emitted from an R chunk inside a .grid
+   would get demoted to grandchildren and fall back to block stacking.
+   `display: contents` makes the wrappers transparent for layout: their
+   children become the effective grid items of the surrounding .grid.
+   ========================= */
+.grid > .cell,
+.grid > .cell > .cell-output-display {
+  display: contents;
+}
+
+/* =========================
+   Filter subscribers (data-filter-show) — flash prevention
+   -------------------------
+   On pages that include a `{{< filter >}}` shortcode, hide every
+   [data-filter-show] element by default; statgl-filter.js then toggles
+   the `.statgl-visible` class on whichever ones match the current
+   filter state. The :has() check scopes the rule so pages without a
+   filter aren't affected (they have no JS to reveal anything).
+   ========================= */
+body:has([data-statgl-filter]) [data-filter-show]:not(.statgl-visible) {
+  display: none !important;
+}
+/* =========================
+   shorty TOC anchor: a hidden, top-level heading emitted by the `shorty`
+   shortcode so its title reaches Quarto's TOC. The level varies (toc_level),
+   so all of h1..h6 are covered. Element-qualified on purpose: Quarto copies
+   header classes onto the wrapping <section>, and we must hide ONLY the
+   header, never the section (which holds the visible card).
+   ========================= */
+h1.shorty-toc-anchor,
+h2.shorty-toc-anchor,
+h3.shorty-toc-anchor,
+h4.shorty-toc-anchor,
+h5.shorty-toc-anchor,
+h6.shorty-toc-anchor {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =========================
+   NAVBAR + LANGUAGE SWITCH
+   ========================= */
+
+/* Labels and hrefs are filled in by site.js (they depend on the language
+   of the page), so keep the menu hidden until that has run. site.js adds
+   .nav-ready in a finally block, so a thrown error still reveals it. */
+.navbar .navbar-nav{ visibility: hidden; }
+.navbar.nav-ready .navbar-nav{ visibility: visible; }
+
+.navbar .navbar-nav .nav-link{
+  font-weight: 500;
+  letter-spacing: .01em;
+  padding-inline: .8rem;
+}
+.navbar .navbar-nav .nav-link:hover,
+.navbar .navbar-nav .nav-link:focus-visible{
+  text-decoration: underline;
+  text-underline-offset: .3em;
+}
+.navbar .navbar-nav .dropdown-menu{ --bs-dropdown-min-width: 13rem; }
+
+/* Current section */
+@media (min-width: 992px){
+  .navbar .navbar-nav>.nav-item>.nav-link.active{ box-shadow: inset 0 -3px 0 currentColor; }
+}
+@media (max-width: 991.98px){
+  .navbar .navbar-nav>.nav-item>.nav-link.active{ box-shadow: inset 3px 0 0 currentColor; }
+}
+
+/* External destination (Statistikbanken) */
+.navbar .nav-external::after{
+  content: "\2197";
+  font-size: .8em;
+  margin-left: .25em;
+  opacity: .75;
+}
+
+/* GL | DK | EN. Lives in .quarto-navbar-tools, i.e. outside the collapsed
+   menu, so it stays visible on mobile without opening the hamburger. */
+.navbar .quarto-navbar-tools{ display: flex; align-items: center; }
+
+.lang-switch{
+  display: inline-flex;
+  align-items: center;
+  gap: .1rem;
+  margin-left: .25rem;
+}
+.lang-switch__btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.1rem;
+  min-height: 2.1rem;
+  padding: .1rem .3rem;
+  border-radius: .25rem;
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: #fff;
+  opacity: 1;                 /* a11y: .7 gave 3.1:1 on brand blue */
+  text-decoration: none;
+}
+.lang-switch__btn:hover,
+.lang-switch__btn:focus-visible{
+  color: #fff;
+  opacity: 1;
+  text-decoration: none;
+  background: rgba(255,255,255,.14);
+}
+.lang-switch__btn.is-active{
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: .3em;
+  text-decoration-thickness: 2px;
+}
+.lang-switch__sep{
+  color: #fff;
+  opacity: .4;
+  font-size: .8rem;
+  user-select: none;
+}
+@media (max-width: 991.98px){
+  .lang-switch__btn{ min-width: 2.4rem; min-height: 2.4rem; font-size: .9rem; }
+}
+
+/* =========================
+   shorty: card icon (icon= arg; Bootstrap Icons glyph with rule "wings")
+   ========================= */
+.shorty .shorty-icon{
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  color: var(--brand);
+  line-height: 1;
+  margin: .25rem auto 1rem;
+}
+.shorty .shorty-icon::before,
+.shorty .shorty-icon::after{
+  content: "";
+  flex: 1 1 0;
+  height: 1px;
+  background: var(--bs-border-color, #dee2e6);
+}
+.shorty .shorty-icon i{
+  font-size: 2.75rem;
+}
+@media (max-width: 575.98px){
+  .shorty .shorty-icon{ gap: .875rem; }
+  .shorty .shorty-icon i{ font-size: 2.25rem; }
+}
+
+/* shorty plot heading: plot_title (bold) + plot_subtitle (unit line) */
+.shorty .shorty-plot-title{
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+.shorty .shorty-plot-title + .shorty-plot-subtitle{
+  margin-top: 0;
+  font-size: .9rem;
+  color: var(--ink-soft);
+}
+/* two plots side by side: align the plot frames even when only one
+   column has a title/subtitle */
+.shorty .shorty-plotrow .shorty-plotcol{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.shorty .shorty-plotrow .shorty-plotcol > .plot-frame{
+  margin-top: auto;
+}
+
+/* Table captions (statgl_table / statgl_crosstable inside shorty).
+   Bootstrap sets caption-side:bottom and browsers centre captions by
+   default; we want them as a left-aligned heading above the table. */
+.shorty table > caption{
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 .5rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Quarto adds an empty pagination nav after custom listings; it still takes
+   up space, so the link under the front-page calendar sat too low. */
+.kpi-grid .listing-pagination:has(ul:empty){ display: none; }
+
+/* =========================
+   NEWS LISTING (ejs/news-card.ejs, ejs/news-row.ejs)
+   ========================= */
+.news-listing{ display:flex; flex-direction:column; gap:1rem; }
+.news-card{
+  position: relative;            /* anchor for .stretched-link */
+  padding: 0;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.news-card:hover{
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand) 45%, var(--line));
+  box-shadow:
+    0 6px 16px rgba(0,0,0,.10),
+    inset 0 0 0 2px color-mix(in srgb, var(--brand) 55%, transparent);
+}
+.news-card > a.stretched-link{ position:absolute; inset:0; z-index:2; }
+.news-card-grid{
+  display:grid;
+  grid-template-columns: minmax(220px, 34%) 1fr;
+  align-items:stretch;
+}
+.news-card--nothumb .news-card-grid{ grid-template-columns: 1fr; }
+.news-thumb{
+  background: var(--panel);   /* charts sit on the panel, as elsewhere on the site */
+  border-right: 1px solid var(--line);
+  min-height: 190px;
+  display:flex;
+}
+.news-thumb-chart{ flex:1 1 auto; min-height: 190px; height:100%; }
+.news-card-body{ padding: 1.25rem 1.5rem 1.4rem; min-width:0; }
+.news-meta{
+  display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+  margin-bottom:.6rem;
+  font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; font-weight:600;
+  color: var(--muted);
+}
+.news-subject{
+  padding:.1rem .6rem; border-radius:999px;
+  background: color-mix(in srgb, var(--brand) 12%, var(--panel));
+  color: var(--brand);
+}
+.news-date{ font-weight:600; }
+.news-head{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:1.25rem;
+}
+.news-title{ margin:0; font-size: var(--fs-2xl); font-weight:600; line-height:1.25; color: var(--text-strong); }
+.news-kpi{ flex:0 0 auto; text-align:right; max-width: 40%; }
+.news-kpi-value{ font-size:1.6rem; font-weight:800; line-height:1.1; color: var(--brand); white-space:nowrap; }
+.news-kpi-label{ margin-top:.2rem; font-size:.78rem; line-height:1.25; color: var(--muted); }
+.news-description{ margin:.7rem 0 0; font-size: var(--fs-base); line-height:1.5; color: var(--text); }
+.news-row .pub-domain{ font-size:.8rem; }
+@media (max-width:767.98px){
+  .news-card-grid{ grid-template-columns: 1fr; }
+  .news-thumb{ border-right:0; border-bottom:1px solid var(--line); min-height:150px; }
+  .news-thumb-chart{ min-height:150px; }
+  .news-card-body{ padding: 1rem 1.1rem 1.2rem; }
+  .news-head{ flex-direction:column; gap:.5rem; }
+  .news-kpi{ text-align:left; max-width:none; }
+  .news-title{ font-size: var(--fs-xl); }
+}
+
+/* Front-page news card in the Tema card shape (news-card.ejs, variant: tema) */
+.news-tema-card .tema-card-thumbnail{ background: var(--panel); border-bottom: 1px solid var(--line); }
+.news-tema-card .tema-card-thumbnail .news-thumb-chart{ position:absolute; inset:0; }
+.news-tema-card .tema-eyebrow{ z-index:1; }
+.news-tema-card .tema-card-body .news-meta{ margin-bottom:.4rem; }
+.news-tema-card .tema-card-description{ color: var(--text); font-size: var(--fs-sm); }
+
+/* Navbar: keep Quarto's headroom (hide on scroll down) on mobile only.
+   On desktop the header stays put; the margin sidebar/TOC must then keep
+   its offset instead of jumping to top:0 (quarto-nav.js sets that inline
+   on unpin, hence the !important). --statgl-header-h is set in site.js. */
+@media (min-width: 992px){
+  header.headroom--unpinned{ transform: none; }
+  .sidebar.sidebar-unpinned{
+    top: var(--statgl-header-h, 0px) !important;
+    max-height: calc(100vh - var(--statgl-header-h, 0px)) !important;
+  }
+}
+
+/* =========================
+   WCAG 2.2 AA (2026-10-15). Findings and rerun: intern/tilgaengelighed.qmd
+   ========================= */
+/* 1.4.3 Quarto's theme dims h3-h6 and the footnote list to 90 %, which pulls
+   brand links inside them down to 3.9:1. */
+h3, .h3, h4, .h4, h5, .h5, h6, .h6,
+#quarto-appendix.default section > :not(a) { opacity: 1; }
+/* 1.4.3 Quarto's category chips are #797f87 at 60 % and 11 px. */
+.quarto-title .quarto-categories .quarto-category { color: var(--ink-soft); opacity: 1; }
+/* 2.5.8 Footer links were 16 px tall and tightly stacked: 24 px targets. */
+footer a.link-secondary { display: inline-block; padding-block: .25rem; }
+/* 2.5.8 Quarto's title breadcrumbs (docs pages) are 19 px tall and touch. */
+.quarto-title-breadcrumbs .breadcrumb-item a { display: inline-block; padding-block: .15rem; }
+/* 2.4.7 Buttons that drop Bootstrap's focus ring get an outline instead. */
+.btn:focus-visible,
+.hero-banner .btn-primary:focus-visible,
+.hero-banner .btn-tertiary:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+/* 2.4.1 Skip link (template.html): visible only when focused. */
+.skip-link {
+  position: absolute; left: .5rem; top: .5rem; z-index: 2000;
+  padding: .5rem .75rem; border-radius: .25rem;
+  background: var(--panel); color: var(--brand); font-weight: 600;
+  transform: translateY(-200%);
+}
+.skip-link:focus { transform: none; outline: 3px solid var(--brand); }
+/* 1.4.10 Reflow at 320 px. Bootstrap's .grid is 12 columns of
+   1fr = minmax(auto, 1fr) with a 1.5rem gap: the cards' min-content and the
+   11 gaps (264 px) set a floor wider than a phone. minmax(0, 1fr) lets the
+   columns shrink and a smaller gap lowers the floor. Long words (Danish
+   compounds, KPI values) wrap instead of pushing the page out. */
+.grid { grid-template-columns: repeat(var(--bs-columns, 12), minmax(0, 1fr)); }
+main, .card { overflow-wrap: anywhere; }   /* .card: Bootstrap sets break-word, which keeps the long word's width */
+main table { overflow-wrap: normal; }       /* tables shrink to min-content otherwise and break every word; they scroll instead */
+/* main is a grid item in Quarto's .page-columns; its auto minimum is its
+   min-content, so one code block or wide table widens the whole page. With
+   0 the block scrolls inside itself (pre is overflow:auto; tables get a
+   .table-responsive wrapper from site.js). */
+main.content { min-width: 0; }
+@media (max-width: 575.98px) {
+  .grid { --bs-gap: .75rem; }
+  .KeyValue { white-space: normal; }
+  .release-listing .release-page-chip { white-space: normal; }
+}
+/* 1.4.3 "Forsinket fra …" was brand orange as text (2.0:1). The clock icon
+   keeps the orange; the words are ink. */
+.release-listing .release-delayed { color: var(--ink); }
+.release-listing .release-delayed i { color: var(--brand-warm); }
+
+/* =========================
+   INFLATION CALCULATOR (inflationcalc shortcode)
+   ========================= */
+.inflation-card .card-body{ padding: 1.5rem; }
+.inflation-eyebrow{
+  font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--brand); margin-bottom: .35rem;
+}
+.inflation-card .card-title{ margin-bottom: .25rem; }
+.inflation-subtitle{ color: var(--meta); margin: 0 0 1.25rem; }
+.inflation-form{ gap: 1rem; }
+.inflation-form .form-label{
+  font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--meta); margin-bottom: .35rem;
+}
+.inflation-form .form-control,
+.inflation-form .form-select,
+.inflation-form .input-group-text{
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--panel); color: var(--ink);
+  padding: .6rem .85rem; font-size: 1rem; line-height: 1.3;
+  box-shadow: none;
+}
+.inflation-form .input-group .input-group-text{ border-right: 0; border-radius: 12px 0 0 12px; color: var(--meta); }
+.inflation-form .input-group .form-control{ border-radius: 0 12px 12px 0; font-variant-numeric: tabular-nums; }
+.inflation-form .form-control:focus,
+.inflation-form .form-select:focus{
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+  outline: none;
+}
+.inflation-result{
+  margin-top: 1.25rem; padding: 1rem 1.25rem; border-radius: 16px;
+  background: color-mix(in srgb, var(--brand) 8%, var(--panel));
+}
+.inflation-result-label{
+  font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--meta);
+}
+.inflation-result-value{
+  font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; line-height: 1.15;
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.inflation-result-meta{ font-size: .8rem; color: var(--meta); margin-top: .35rem; }
+.inflation-result-meta:empty{ display: none; }
+@media (prefers-color-scheme: dark){
+  .inflation-form .form-select{
+    --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23e5e7eb' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  }
+  .inflation-form .form-select option{ background: var(--panel); color: var(--ink); }
+}
+
+/* =========================
+   STAFF CARDS (ejs/staff.ejs) — full-width contact cards with area bullets
+   ========================= */
+.staff-card .contact-row{
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: .5rem 1.25rem;
+  align-items: start;
+}
+.contact-areas{
+  margin: 0; padding-left: 1.1rem; color: var(--text);
+  columns: 1;
+}
+.contact-areas li{ margin: .2rem 0; }
+.contact-areas a{ color: var(--brand); text-decoration: none; }
+.contact-areas a:hover{ text-decoration: underline; }
+@media (max-width: 575.98px){
+  .staff-card .contact-row{ grid-template-columns: auto minmax(0, 1fr); }
+  .staff-card .contact-areas{ grid-column: 2; margin-top: .25rem; }
 }

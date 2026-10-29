@@ -1,50 +1,142 @@
+-- Phosphor Icons: alias table, weight rules and <i> markup live in
+-- phosphor.lua (shared with the phosphor-icons.lua filter). Card-sized
+-- icons are thin, small inline icons regular; an explicit weight in the
+-- icon spec ("ph-fill ph-house") wins. Legacy "bi-*" names are aliased.
+local PH = dofile(pandoc.path.join({ pandoc.path.directory(PANDOC_SCRIPT_FILE), "phosphor.lua" }))
+
 function kpicard(args, kwargs, meta)
-local title = pandoc.utils.stringify(kwargs["title"] or "")
-local subtitle = pandoc.utils.stringify(kwargs["subtitle"] or "")
+  local title = pandoc.utils.stringify(kwargs["title"] or "")
+  local subtitle = pandoc.utils.stringify(kwargs["subtitle"] or "")
   local value = pandoc.utils.stringify(kwargs["value"] or "")
   local link = pandoc.utils.stringify(kwargs["link"] or "")
   local style = pandoc.utils.stringify(kwargs["style"] or "")
+  local filter_show = pandoc.utils.stringify(kwargs["filter_show"] or "")
+  local delta = pandoc.utils.stringify(kwargs["delta"] or "")
+  local delta_title = pandoc.utils.stringify(kwargs["delta_title"] or "")
+  local delta_arrow = pandoc.utils.stringify(kwargs["delta_arrow"] or "")
 
+  local style_attr = ""
+  if style ~= "" then
+    style_attr = ' style="' .. style .. '"'
+  end
 
-  local onclick_attr = ""
-  local cursor_style = "" .. style
-  
-if link ~= "" then
-  onclick_attr = ' onclick="window.location.href=\'' .. link .. '\'"'
-  cursor_style = ' style="cursor: pointer;' .. style .. '"'
-elseif style ~= "" then
-  cursor_style = ' style="' .. style .. '"'
-end
+  -- Optional bottom-right delta indicator. Arrow direction is read off the
+  -- sign of the delta string: leading "-" (or U+2212) gives a down arrow,
+  -- anything else an up arrow. Suppress with delta_arrow = "false".
+  local delta_html = ""
+  if delta ~= "" or delta_title ~= "" then
+    local value_html = ""
+    if delta ~= "" then
+      local arrow = ""
+      if delta_arrow ~= "false" then
+        local trimmed = delta:gsub("^%s+", "")
+        if trimmed:match("^%-") or trimmed:match("^\u{2212}") then
+          arrow = '<span class="KeyDeltaArrow" aria-hidden="true">&#9660;</span> '
+        else
+          arrow = '<span class="KeyDeltaArrow" aria-hidden="true">&#9650;</span> '
+        end
+      end
+      value_html = string.format('<div class="KeyDeltaValue">%s%s</div>', arrow, delta)
+    end
+    local title_html = ""
+    if delta_title ~= "" then
+      title_html = string.format('<div class="KeyDeltaTitle">%s</div>', delta_title)
+    end
+    delta_html = string.format([[
+        <div class="KeyDelta">
+          %s
+          %s
+        </div>]], value_html, title_html)
+  end
 
-  local html = string.format([[
-    <div class="card KeyBox"%s%s>
-      <div class="KeyValue">%s</div>
-      <div class="KeyTitle">%s</div>
-      <div class="KeySubtitle">%s</div>
-    </div>
-  ]], onclick_attr, cursor_style, value, title, subtitle)
+  local card_html = ""
+
+  if link ~= "" then
+    -- Accessible anchor version
+    card_html = string.format([[
+      <a class="card KeyBox" href="%s"%s>
+        <div class="KeyValue">%s</div>
+        <div class="KeyTitle">%s</div>
+        <div class="KeySubtitle">%s</div>%s
+      </a>
+    ]], link, style_attr, value, title, subtitle, delta_html)
+
+  else
+    -- Non-link fallback
+    card_html = string.format([[
+      <div class="card KeyBox"%s>
+        <div class="KeyValue">%s</div>
+        <div class="KeyTitle">%s</div>
+        <div class="KeySubtitle">%s</div>%s
+      </div>
+    ]], style_attr, value, title, subtitle, delta_html)
+  end
+
+  -- Optional filter_show wrapper: hides card based on page-wide filter state.
+  -- Format: "<filter_id>:<value>"  e.g. "station:Nuuk", "station:*" (any value
+  -- selected), or "station:" (no selection / default).
+  local html = card_html
+  if filter_show ~= "" then
+    html = string.format(
+      '<div data-filter-show="%s">%s</div>',
+      filter_show, card_html
+    )
+  end
 
   return pandoc.RawBlock("html", html)
 end
 
+-- Read `final:` from the frontmatter of the qmd a card links to, so
+-- hand-placed cards get the same card--final / card--draft colouring as
+-- EJS listing cards. Returns " card--final", " card--draft" or "".
+local function final_status_class(link)
+  if link == "" or link == "#" or link:match("^%a[%w+.-]*:") then return "" end
+  local target = link:gsub("[#?].*$", "")
+  if not target:match("%.qmd$") then return "" end
+
+  local path
+  if target:sub(1, 1) == "/" then
+    local root = (quarto and quarto.project and quarto.project.directory) or "."
+    path = root .. target
+  else
+    local input = quarto and quarto.doc and quarto.doc.input_file
+    if not input then return "" end
+    local dir = input:match("^(.*)[/\\]") or "."
+    path = dir .. "/" .. target
+  end
+
+  local f = io.open(path, "r")
+  if not f then return "" end
+  local src = f:read("*a")
+  f:close()
+
+  local yaml = src:gsub("\r\n", "\n"):match("^%-%-%-\n(.-)\n%-%-%-")
+  if not yaml then return "" end
+  local v = ("\n" .. yaml):match("\nfinal:%s*['\"]?(%a+)")
+  if v == "true" then return " card--final" end
+  if v == "false" then return " card--draft" end
+  return ""
+end
+
 function sectioncard(args, kwargs, meta)
   local U     = pandoc.utils.stringify
-  local icon  = U(kwargs["icon"]  or "bi-box")
+  local icon  = PH.classes(U(kwargs["icon"] or ""), "thin", "ph-package")
   local title = U(kwargs["title"] or "Title")
   local text  = U(kwargs["text"]  or "Description text")
   local link  = U(kwargs["link"]  or "#")
+  local status = final_status_class(link)
 
   local html = string.format([[
-<a class="sectioncard card h-100 text-start text-md-center" href="%s" aria-label="%s">
+<a class="sectioncard card h-100 text-start text-md-center%s" href="%s" aria-label="%s">
   <div class="card-body d-flex flex-row flex-md-column align-items-center gap-3 gap-md-1">
-    <i class="bi %s sectioncard-icon me-2 me-md-0" aria-hidden="true"></i>
+    <i class="%s sectioncard-icon me-2 me-md-0" aria-hidden="true"></i>
     <div class="sectioncard-textblock">
       <div class="section-title">%s</div>
       <p class="card-text sectioncard-text">%s</p>
     </div>
   </div>
 </a>
-]], link, title, icon, title, text)
+]], status, link, title, icon, title, text)
 
   return pandoc.RawBlock("html", html)
 end
@@ -187,13 +279,21 @@ function shorty(args, kwargs, meta)
   local description   = U(kwargs["description"]   or "")
   local link          = U(kwargs["link"]          or "")
   local img           = U(kwargs["img"]           or "")
+  local icon          = U(kwargs["icon"]          or "")
 
   local plot_raw      = U(kwargs["plot"]          or "")
   local plot2_raw     = U(kwargs["plot2"]         or "")
+  local plot_title    = U(kwargs["plot_title"]    or "")
+  local plot2_title   = U(kwargs["plot2_title"]   or "")
   local plot_subtitle = U(kwargs["plot_subtitle"] or "")
   local plot2_subtitle= U(kwargs["plot2_subtitle"] or "")
 
   local height        = U(kwargs["height"]        or "")
+  local width         = U(kwargs["width"]         or "")
+  local anchor_id     = U(kwargs["anchor"] or "")
+  local filter_series = U(kwargs["filter_series"] or "")
+  local filter_show   = U(kwargs["filter_show"]   or "")
+  local toc_level_raw = U(kwargs["toc_level"]     or "")
 
   -- optional image -----------------------------------------------
   local img_html = ""
@@ -331,40 +431,139 @@ function shorty(args, kwargs, meta)
     description_html = '<div class="shorty-description">' .. md_to_html(description) .. '</div>'
   end
 
-  -- centered image -----------------------------------------------
+  -- centered image / icon ----------------------------------------
+  -- icon = "ph-vault" -> Phosphor glyph, flanked by rule lines
+  --                     (see .shorty-icon). img wins if both are given.
   img_html = ""
   if img ~= "" then
     img_html = string.format(
       '<div class="shorty-image text-center mb-3"><img src="%s" class="img-fluid" alt=""></div>',
       escfmt(img)
     )
+  elseif icon ~= "" then
+    img_html = string.format(
+      '<div class="shorty-icon mb-3" aria-hidden="true"><i class="%s"></i></div>',
+      escfmt(PH.classes(icon, "thin"))
+    )
   end
 
-  local text_block = string.format([[
-  <div class="shorty-textcol">
-    %s        <!-- title -->
+-- Title is emitted as a real pandoc.Header (not raw HTML) so Quarto's
+-- TOC picks it up. The textcol wrapper is therefore split into an opening
+-- part (before the header) and a "rest" part (after it).
+-- TOC handling for the title.
+--
+-- Quarto builds its TOC from headers that sit at the document's top level: it
+-- wraps each in a <section id="…"> during normalization and the TOC is built
+-- from those sections. A header *nested* inside the card's Divs is never
+-- wrapped, so it never reaches the TOC — id or not.
+--
+-- So we emit two things:
+--   * title_block: a real, top-level (visually hidden) Header carrying the
+--     anchor id. Quarto wraps it in a <section> (the following card lands
+--     inside that section), and it shows up in the TOC with the real title.
+--   * title_html: the visible card title, kept inside the card as before, so
+--     the layout is unchanged.
+-- `toc_level` controls TOC behaviour with a single arg:
+--   unset / ""                -> show in TOC at the default level (3)
+--   "0" / "false" / "none"    -> not in the TOC at all
+--   "1".."6"                  -> show in the TOC at that header level
+--                               (nest under section headings by going deeper;
+--                                remember Quarto's toc-depth must allow it)
+local toc_level   = 3
+local show_in_toc = true
+do
+  local tl = toc_level_raw:lower():gsub("%s+", "")
+  if tl ~= "" then
+    if tl == "0" or tl == "false" or tl == "none" or tl == "no" then
+      show_in_toc = false
+    else
+      local n = tonumber(tl)
+      if n and n >= 1 and n <= 6 then
+        toc_level = math.floor(n)
+      end
+    end
+  end
+end
+
+local title_block = nil
+local title_html  = ""
+if title ~= "" then
+  -- Filter-generated headers don't receive Quarto's auto identifier, so
+  -- assign one: the `anchor` arg if given, else a slug derived from the title.
+  local function slugify(s)
+    s = pandoc.text.lower(s)
+    s = s:gsub("[%z\1-\31]", "")
+    s = s:gsub("%s+", "-"):gsub("[^%w%-_]", ""):gsub("%-+", "-")
+    s = s:gsub("^%-+", ""):gsub("%-+$", "")
+    return s
+  end
+
+  local header_id = anchor_id ~= "" and anchor_id or slugify(title)
+  if header_id == "" then
+    header_id = "shorty-" .. tostring(math.random(100000, 999999))
+  end
+
+  -- Visible title inside the card. anchor.js resolves the anchor icon's href
+  -- as id -> data-anchor-id -> slug of the text content, so without an
+  -- attribute it would mint its own slug-of-title id and the icon would point
+  -- past the real anchor. When the hidden TOC header exists, its <section>
+  -- owns the id, so the visible h3 gets data-anchor-id (no duplicate id).
+  -- Without a TOC header there is no section, so the h3 carries the id itself.
+  if show_in_toc then
+    title_html = '<h3 class="card-title" aria-hidden="true" data-anchor-id="'
+      .. escfmt(header_id) .. '">' .. escfmt(title) .. '</h3>'
+  else
+    title_html = '<h3 class="card-title" aria-hidden="true" id="'
+      .. escfmt(header_id) .. '">' .. escfmt(title) .. '</h3>'
+  end
+
+  if show_in_toc then
+    -- Hidden top-level header for the TOC anchor.
+    -- NB: Quarto copies a header's classes onto the <section> it wraps it in,
+    -- so we must NOT use a generic hide-anything class like `visually-hidden`
+    -- (it would hide the whole section, card included). Instead we tag it and
+    -- hide it with an element-qualified rule (h3.shorty-toc-anchor, etc.) in
+    -- styles.css, which the copied class on the <section> element can't match.
+    local attr = pandoc.Attr(header_id, {"shorty-toc-anchor"})
+    -- A title such as "2. Foo" or "> Foo" parses as a list/blockquote rather
+    -- than a paragraph; Header needs Inlines, so fall back to the literal text.
+    local parsed = pandoc.read(title, "markdown").blocks
+    local title_inlines
+    if #parsed == 1 and (parsed[1].t == "Para" or parsed[1].t == "Plain") then
+      title_inlines = parsed[1].content
+    else
+      title_inlines = pandoc.Inlines{ pandoc.Str(title) }
+    end
+    title_block = pandoc.Header(toc_level, title_inlines, attr)
+  end
+end
+
+  local text_rest = string.format([[
+    %s        <!-- visible title -->
     %s        <!-- subtitle -->
     %s        <!-- centered img -->
-    %s        <!-- description -->
-  </div>]],
-    (title ~= "" and ('<h2 class="card-title">' .. escfmt(title) .. '</h2>') or ""),
+    %s        <!-- description -->]],
+    title_html,
     subtitle_html,
     img_html,
     description_html
   )
 
-  -- plot subtitles -----------------------------------------------
-  local plot_subtitle_html  = ""
-  local plot2_subtitle_html = ""
-
-  if plot_subtitle ~= "" then
-    plot_subtitle_html =
-      '<p class="shorty-plot-subtitle">' .. escfmt(plot_subtitle) .. '</p>'
+  -- plot titles / subtitles ---------------------------------------
+  -- plot_title is the chart heading, plot_subtitle the line under it
+  -- (typically the unit). Either may be given alone.
+  local function plot_head(t, st)
+    local out = ""
+    if t ~= "" then
+      out = out .. '<p class="shorty-plot-title">' .. escfmt(t) .. '</p>'
+    end
+    if st ~= "" then
+      out = out .. '<p class="shorty-plot-subtitle">' .. escfmt(st) .. '</p>'
+    end
+    return out
   end
-  if plot2_subtitle ~= "" then
-    plot2_subtitle_html =
-      '<p class="shorty-plot-subtitle">' .. escfmt(plot2_subtitle) .. '</p>'
-  end
+  local plot_subtitle_html  = plot_head(plot_title,  plot_subtitle)
+  local plot2_subtitle_html = plot_head(plot2_title, plot2_subtitle)
 
   -- plot block (1 or 2 plots, link + docs under plots) ----------
   local plot_block = ""
@@ -411,23 +610,78 @@ function shorty(args, kwargs, meta)
     end
   end
 
-  -- outer wrapper ------------------------------------------------
-  local html = string.format([[
-<div class="card panel-card mb-4 shorty">
-  <div class="card-body">
-    <div class="grid shorty-grid">
-      <div class="g-col-12">
-        %s
-        %s
-      </div>
-    </div>
-  </div>
-</div>]],
-    text_block,
-    plot_block
+  -- outer wrapper (built as pandoc Divs so DOM nesting matches the old output;
+  -- the TOC header is returned separately, at top level, further below) -------
+
+  -- textcol: visible title + remaining text, all as raw HTML
+  local textcol = pandoc.Div(
+    {pandoc.RawBlock("html", text_rest)},
+    pandoc.Attr("", {"shorty-textcol"})
   )
 
-  return pandoc.RawBlock("html", html)
+  -- g-col-12: textcol + plot block
+  local gcol_children = pandoc.List({})
+  gcol_children:insert(textcol)
+  if plot_block ~= "" then
+    gcol_children:insert(pandoc.RawBlock("html", plot_block))
+  end
+  local gcol     = pandoc.Div(gcol_children, pandoc.Attr("", {"g-col-12"}))
+  local grid     = pandoc.Div({gcol},     pandoc.Attr("", {"grid", "shorty-grid"}))
+  local cardbody = pandoc.Div({grid},     pandoc.Attr("", {"card-body"}))
+
+  -- Optional filter attrs on the outer card.
+  --   filter_series="station" -> data-filter-series="station" so the bus
+  --     filters Highcharts series inside this card by series.tags.station.
+  local card_kv = {}
+  if filter_series ~= "" then
+    table.insert(card_kv, {"data-filter-series", filter_series})
+  end
+
+  -- Optional width tier: lets a single card break out of the ~900px content
+  -- column for wide tables. Mapped to a tier class; the actual widening is
+  -- gutter-limited in styles.css so it can never cause horizontal overflow.
+  --   ""                       -> normal content width (unchanged)
+  --   "outset" / "wide"        -> shorty-w-outset  (modest widen)
+  --   "page"                   -> shorty-w-page     (wider)
+  --   "screen" / "full"        -> shorty-w-screen   (fills the gutters)
+  local card_classes = {"card", "panel-card", "mb-4", "shorty"}
+  do
+    local w = width:lower():gsub("%s+", "")
+    local tier = nil
+    if w == "outset" or w == "wide" then
+      tier = "shorty-w-outset"
+    elseif w == "page" then
+      tier = "shorty-w-page"
+    elseif w == "screen" or w == "full" then
+      tier = "shorty-w-screen"
+    end
+    if tier then
+      table.insert(card_classes, "shorty-wide")
+      table.insert(card_classes, tier)
+    end
+  end
+
+  local card = pandoc.Div(
+    {cardbody},
+    pandoc.Attr("", card_classes, card_kv)
+  )
+
+  -- Optional filter_show wrapper around the whole card (same semantics as
+  -- on kpicard: "<filter_id>:<value>", "<id>:*", or "<id>:").
+  local card_node = card
+  if filter_show ~= "" then
+    card_node = pandoc.Div(
+      {card},
+      pandoc.Attr("", {}, {{"data-filter-show", filter_show}})
+    )
+  end
+
+  -- Return the hidden TOC header (top-level, so Quarto wraps it in a <section>
+  -- and the card lands inside it) followed by the card itself.
+  if title_block then
+    return pandoc.List({title_block, card_node})
+  end
+  return card_node
 end
 
 function feature(args, kwargs, meta)
@@ -480,9 +734,9 @@ function feature(args, kwargs, meta)
   elseif icon ~= "" then
     media_html = string.format([[
       <div class="fx-media fx-icon">
-        <i class="bi %s"></i>
+        <i class="%s"></i>
       </div>
-    ]], icon)
+    ]], PH.classes(icon, "thin"))
   end
 
   ---------------------------------------------------------------------------
@@ -556,9 +810,9 @@ function feature(args, kwargs, meta)
             <div class="feature-title">%s</div>
             <div class="feature-subtitle">%s</div>
             <div class="feature-copy">%s</div>
-            %s
           </div>
         </div>
+        %s
       </div>
     </div>
   ]], onclick_attr, cursor_style, media_html, eyebrow, title_html, subtitle, body_html, accordion_html)
@@ -574,9 +828,10 @@ function contact(args, kwargs, meta)
   local role  = U(kwargs["role"]  or "")
   local phone = U(kwargs["phone"] or "")
   local mail  = U(kwargs["mail"]  or "")
-  local icon  = U(kwargs["icon"]  or "bi-person-circle")
+  local icon  = U(kwargs["icon"]  or "ph-user-circle")
   local style = U(kwargs["style"] or "")
-  if icon == "" then icon = "bi-person-circle" end
+  if icon == "" then icon = "ph-user-circle" end
+  icon = PH.classes(icon, "thin")
 
   --------------------------------------------------------------------------
   -- address: accept list, \n, or <br>, same behaviour as your original code
@@ -632,14 +887,14 @@ function contact(args, kwargs, meta)
   if #address_lines > 0 then
     local joined = table.concat(address_lines, "<br>")
     table.insert(lines, string.format(
-      '<li class="contact-line"><i class="bi bi-geo-alt me-2"></i><span>%s</span></li>',
+      '<li class="contact-line"><i class="ph ph-map-pin me-2"></i><span>%s</span></li>',
       joined))
   end
 
   -- Phone (obfuscated)
   if phone_codes ~= "" then
     table.insert(lines, string.format(
-      '<li class="contact-line"><i class="bi bi-telephone me-2"></i>' ..
+      '<li class="contact-line"><i class="ph ph-phone me-2"></i>' ..
       '<span class="staff-phone" data-phone-codes="%s"></span></li>',
       phone_codes))
   end
@@ -647,7 +902,7 @@ function contact(args, kwargs, meta)
   -- Email (obfuscated)
   if email_codes ~= "" then
     table.insert(lines, string.format(
-      '<li class="contact-line"><i class="bi bi-envelope me-2"></i>' ..
+      '<li class="contact-line"><i class="ph ph-envelope me-2"></i>' ..
       '<a class="staff-email" href="#" data-email-codes="%s"></a></li>',
       email_codes))
   end
@@ -661,7 +916,7 @@ function contact(args, kwargs, meta)
         <div class="contact-title">%s</div>
         <div class="contact-row">
           <div class="contact-icon">
-            <i class="bi %s" aria-hidden="true"></i>
+            <i class="%s" aria-hidden="true"></i>
           </div>
           <div class="contact-text">
             <div class="contact-name">%s</div>
@@ -759,7 +1014,7 @@ function readmore_end(args, kwargs, meta)
   </div>
   <div class="readmore__button-wrapper">
     <button type="button" class="readmore__toggle" aria-expanded="false" title="Læs mere">
-      <span class="readmore__icon"><i class="bi bi-plus"></i></span>
+      <span class="readmore__icon"><i class="ph ph-plus"></i></span>
     </button>
   </div>
 </div>]])
@@ -808,7 +1063,7 @@ function pdf_archive(args, kwargs, meta)
   local label_base   = U(kwargs["label_base"] or "Virksomhedsplan")
   local collapsed    = U(kwargs["collapsed"] or "true")
   local target_blank = U(kwargs["target_blank"] or "true")
-  local icon_class   = U(kwargs["icon"] or "bi-filetype-pdf")
+  local icon_class   = PH.classes(U(kwargs["icon"] or ""), "regular", "ph-file-pdf")
   local id_base      = U(kwargs["id"] or ("pdf-archive-" .. slugify(dir)))
 
   -- Read dir and keep only PDFs (case-insensitive)
@@ -892,7 +1147,7 @@ function pdf_archive(args, kwargs, meta)
   for _, r in ipairs(rows) do
     table.insert(out, string.format([[
           <li class="mb-1">
-            <i class="bi %s me-2"></i>
+            <i class="%s me-2"></i>
             <a href="%s"%s>%s</a>
           </li>]],
       html_escape(icon_class),
@@ -924,8 +1179,8 @@ function externcard(args, kwargs, meta)
   local title   = U(kwargs["title"] or "Ekstern kilde")
   local text    = U(kwargs["text"]  or "")
   local url     = U(kwargs["url"]   or "#")
-  local icon    = U(kwargs["icon"]  or "bi-id-badge")            -- left icon
-  local chevron = U(kwargs["chevron"] or "bi-arrow-right-circle")-- right icon
+  local icon    = PH.classes(U(kwargs["icon"]    or ""), "thin", "ph-identification-badge") -- left
+  local chevron = PH.classes(U(kwargs["chevron"] or ""), "regular", "ph-arrow-circle-right")   -- right
   local target  = U(kwargs["target"] or "_blank")
   local rel     = U(kwargs["rel"] or "noopener")
   local style   = U(kwargs["style"] or "")
@@ -936,13 +1191,13 @@ function externcard(args, kwargs, meta)
 <div class="card shadow-sm border-0 externcard position-relative" style="%s" role="link" aria-label="%s">
     <div class="card-body d-flex align-items-center justify-content-between p-4 gap-3">
       <div class="d-flex align-items-center gap-3 min-w-0">
-        <i class="bi %s externcard-icon flex-shrink-0" aria-hidden="true"></i>
+        <i class="%s externcard-icon flex-shrink-0" aria-hidden="true"></i>
         <div class="min-w-0">
           <div class="externcard-title mb-1">%s</div>
           %s
         </div>
       </div>
-      <i class="bi %s externcard-chevron flex-shrink-0" aria-hidden="true"></i>
+      <i class="%s externcard-chevron flex-shrink-0" aria-hidden="true"></i>
     </div>
     <a class="stretched-link" href="%s"%s rel="%s"></a>
   </div>
@@ -951,7 +1206,7 @@ function externcard(args, kwargs, meta)
     h(title),
     h(icon),
     h(title),
-    (text ~= "" and ('<div class="externcard-subtitle text-muted">'..h(text)..'</div>') or ""),
+    (text ~= "" and ('<div class="externcard-subtitle">'..h(text)..'</div>') or ""),
     h(chevron),
     h(url), target_attr, h(rel)
   )
@@ -961,64 +1216,56 @@ end
 
 function inflationcalc(args, kwargs, meta)
   local U  = pandoc.utils.stringify
-  local id = U(kwargs["id"] or "inflation-calculator")
+  local id = U(kwargs["anchor"] or "inflation-calculator")
 
   local eyebrow  = U(kwargs["eyebrow"]  or "Beregner")
   local title    = U(kwargs["title"]    or "Inflationsberegner")
   local subtitle = U(kwargs["subtitle"] or
     "Se hvad et beløb fra et tidligere tidspunkt svarer til i priserne på et andet tidspunkt.")
 
+  -- Form labels (scraped by generate_twins.R for translation)
+  local amount_label = U(kwargs["amount_label"] or "Beløb")
+  local from_label   = U(kwargs["from_label"]   or "Fra")
+  local to_label     = U(kwargs["to_label"]     or "Til")
+  local result_label = U(kwargs["result_label"] or "Omregnet beløb i priser for")
+
+  -- Markup uses the site's CSS grid (.grid/.g-col-*) like every other card;
+  -- Bootstrap's .row/.col-* are not part of Quarto's build, so the old
+  -- three-column form stacked at every width. Styling: .inflation-* in styles.css.
+  local eyebrow_html = ""
+  if eyebrow ~= "" then
+    eyebrow_html = '<div class="inflation-eyebrow">' .. eyebrow .. '</div>'
+  end
+
   local html = [[
 <div class="panel-card card inflation-card" id="{{ID}}">
-  <div class="card-body d-flex flex-column gap-3">
-
-    <!-- Header block -->
-    <div>
-      <div class="text-uppercase small fw-semibold text-muted mb-1">
-        {{EYEBROW}}
-      </div>
-      <h2 class="card-title anchored">{{TITLE}}</h2>
-      <p class="text-muted small mb-0">{{SUBTITLE}}</p>
-    </div>
-
-    <!-- Form body -->
-    <div class="mt-2">
-      <div class="row g-3 align-items-end">
-        <div class="col-12 col-md-4">
-          <label for="{{ID}}-amount" class="form-label">Beløb</label>
-          <div class="input-group">
-            <span class="input-group-text">kr.</span>
-            <input type="number" class="form-control" id="{{ID}}-amount"
-                   value="1000" min="0" step="1">
-          </div>
-        </div>
-
-        <div class="col-6 col-md-4">
-          <label for="{{ID}}-from" class="form-label">Fra</label>
-          <select class="form-select" id="{{ID}}-from"></select>
-        </div>
-
-        <div class="col-6 col-md-4">
-          <label for="{{ID}}-to" class="form-label">Til</label>
-          <select class="form-select" id="{{ID}}-to"></select>
+  <div class="card-body">
+    {{EYEBROW_HTML}}
+    <h2 class="card-title anchored">{{TITLE}}</h2>
+    <p class="inflation-subtitle">{{SUBTITLE}}</p>
+    <div class="grid inflation-form">
+      <div class="g-col-12 g-col-md-4">
+        <label for="{{ID}}-amount" class="form-label">{{AMOUNT_LABEL}}</label>
+        <div class="input-group">
+          <span class="input-group-text">kr.</span>
+          <input type="number" class="form-control" id="{{ID}}-amount"
+                 value="1000" min="0" step="1" inputmode="decimal">
         </div>
       </div>
+      <div class="g-col-6 g-col-md-4">
+        <label for="{{ID}}-from" class="form-label">{{FROM_LABEL}}</label>
+        <select class="form-select" id="{{ID}}-from"></select>
+      </div>
+      <div class="g-col-6 g-col-md-4">
+        <label for="{{ID}}-to" class="form-label">{{TO_LABEL}}</label>
+        <select class="form-select" id="{{ID}}-to"></select>
+      </div>
     </div>
-
-    <!-- Result footer -->
-    <div class="mt-3 pt-2 border-top" style="border-top-color: var(--hairline);">
-      <p class="mb-1 text-muted">
-        Omregnet beløb i priser for <span id="{{ID}}-to-label"></span>:
-      </p>
-      <p class="fs-4 fw-bold mb-0">
-        <span id="{{ID}}-result">—</span> kr.
-      </p>
-
-      <p class="mt-2 mb-0 text-muted small" id="{{ID}}-meta">
-        Henter prisindeks fra Statistikbanken …
-      </p>
+    <div class="inflation-result" aria-live="polite">
+      <div class="inflation-result-label">{{RESULT_LABEL}} <span id="{{ID}}-to-label"></span></div>
+      <div class="inflation-result-value"><span id="{{ID}}-result">—</span> kr.</div>
+      <div class="inflation-result-meta" id="{{ID}}-meta">Henter prisindeks fra Statistikbanken …</div>
     </div>
-
   </div>
 </div>
 
@@ -1033,9 +1280,305 @@ function inflationcalc(args, kwargs, meta)
 ]]
 
   html = html:gsub("{{ID}}", id)
-  html = html:gsub("{{EYEBROW}}", eyebrow)
+  html = html:gsub("{{EYEBROW_HTML}}", eyebrow_html)
   html = html:gsub("{{TITLE}}", title)
   html = html:gsub("{{SUBTITLE}}", subtitle)
+  html = html:gsub("{{AMOUNT_LABEL}}", amount_label)
+  html = html:gsub("{{FROM_LABEL}}", from_label)
+  html = html:gsub("{{TO_LABEL}}", to_label)
+  html = html:gsub("{{RESULT_LABEL}}", result_label)
+
+  return pandoc.RawBlock("html", html)
+end
+
+function pagebreak(args, kwargs, meta)
+  return pandoc.RawBlock("html", table.concat({
+    '<div class="pagebreak"></div>',
+    '<div class="pagebreak-anchor">&#8203;</div>'
+  }, "\n"))
+end
+
+function hvorstaarjeg(args, kwargs, meta)
+  local U = pandoc.utils.stringify
+
+  -- escape % for gsub replacement strings
+  -- parentheses around gsub discard the second return value (count),
+  -- which would otherwise be passed as the maxn argument to the outer gsub.
+  local function esc(s)
+    return (tostring(s):gsub("%%", "%%%%"))
+  end
+
+  -- minimal JSON string encoder (handles the chars we'll encounter in labels)
+  local function json_str(s)
+    s = tostring(s)
+    s = (s:gsub('\\', '\\\\'))
+    s = (s:gsub('"',  '\\"'))
+    s = (s:gsub('\n', '\\n'))
+    s = (s:gsub('\r', '\\r'))
+    s = (s:gsub('</', '<\\/'))  -- guard against </script> inside JSON block
+    return '"' .. s .. '"'
+  end
+
+  -- ── identity / header ────────────────────────────────────────────────────
+  local id       = U(kwargs["id"]       or "hvor-staar-jeg")
+  local eyebrow  = U(kwargs["eyebrow"]  or "Beregner")
+  local title    = U(kwargs["title"]    or "Hvor står jeg?")
+  local subtitle = U(kwargs["subtitle"] or
+    "Hvad tjener folk i Grønland — og hvor er du i indkomstfordelingen?")
+  local data     = U(kwargs["data"]     or "")
+
+  if data == "" then
+    return pandoc.RawBlock(
+      "html",
+      '<div class="alert alert-warning">Shortcode <code>hvorstaarjeg</code> mangler argumentet <code>data</code>.</div>'
+    )
+  end
+
+  -- ── static UI labels (rendered directly in HTML) ─────────────────────────
+  local privacy_note = U(kwargs["privacy_note"] or
+    "Beregningen bruger disponibel personindkomst. Vi gemmer ikke dine oplysninger.")
+  local income_label = U(kwargs["income_label"] or "Din disponible årsindkomst")
+  -- Note: the default intentionally contains an <em> tag; plain-text overrides are fine.
+  local guess_label  =   kwargs["guess_label"]
+  if guess_label then
+    guess_label = U(guess_label)
+  else
+    guess_label = "Gæt — hvor mange procent tjener <em>mindre</em> end dig?"
+  end
+  local btn_reveal   = U(kwargs["btn_reveal"] or "Se din placering")
+  local btn_reset    = U(kwargs["btn_reset"]  or "Prøv igen")
+
+  -- ── JS-side i18n strings (passed via embedded JSON) ──────────────────────
+  -- {guess} and {diff} are placeholders filled in at runtime by the JS.
+  local result_suffix = U(kwargs["result_suffix"] or
+    "af personer i Grønland tjener <em>mindre</em> end dig.")
+  local guess_higher  = U(kwargs["guess_higher"] or
+    "Du gættede {guess} % — det faktiske tal er <b>{diff} procentpoint højere</b>.")
+  local guess_lower   = U(kwargs["guess_lower"] or
+    "Du gættede {guess} % — det faktiske tal er <b>{diff} procentpoint lavere</b>.")
+  local guess_exact   = U(kwargs["guess_exact"] or "Du ramte præcis!")
+
+  local i18n_json = string.format(
+    '{"resultSuffix":%s,"guessHigher":%s,"guessLower":%s,"guessExact":%s}',
+    json_str(result_suffix),
+    json_str(guess_higher),
+    json_str(guess_lower),
+    json_str(guess_exact)
+  )
+
+  local html = [[
+<div class="panel-card card pct-card" id="{{ID}}">
+  <div class="card-body d-flex flex-column gap-3">
+
+    <div>
+      <div class="text-uppercase small fw-semibold text-muted mb-1">{{EYEBROW}}</div>
+      <h2 class="card-title anchored">{{TITLE}}</h2>
+      <p class="text-muted small mb-0">{{SUBTITLE}}</p>
+    </div>
+
+    <script type="application/json" class="pct-data">{{DATA}}</script>
+    <script type="application/json" class="pct-i18n">{{I18N}}</script>
+
+    <div class="pct-step1">
+      <p class="text-muted small mb-3">{{PRIVACY_NOTE}}</p>
+
+      <div class="mb-3">
+        <label for="{{ID}}-indkomst" class="form-label">{{INCOME_LABEL}}</label>
+        <div style="position:relative">
+          <input
+            type="number"
+            class="form-control"
+            id="{{ID}}-indkomst"
+            min="0"
+            max="2000000"
+            step="10000"
+            value="200000"
+            style="padding-right:3.25rem">
+          <span style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);
+                       color:var(--muted);pointer-events:none;font-size:.9em">kr.</span>
+        </div>
+      </div>
+
+      <div class="mb-1">
+        <label for="{{ID}}-gaet" class="form-label d-flex justify-content-between align-items-baseline">
+          <span>{{GUESS_LABEL}}</span>
+          <span id="{{ID}}-gaet-vis" class="pct-guess-value ms-3 text-nowrap">50 %</span>
+        </label>
+        <input
+          type="range"
+          class="form-range"
+          id="{{ID}}-gaet"
+          min="0"
+          max="100"
+          value="50">
+      </div>
+
+      <div class="mt-3">
+        <button type="button" class="btn btn-primary pct-reveal-btn">
+          {{BTN_REVEAL}}
+        </button>
+      </div>
+    </div>
+
+    <div class="pct-step2 d-none">
+      <div class="pct-resultat mb-3"></div>
+
+      <div class="pct-bar-wrap">
+        <div class="pct-bar-container"></div>
+        <div class="pct-axis">
+          <span>0 %</span>
+          <span>50 %</span>
+          <span>100 %</span>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm pct-reset-btn">
+          {{BTN_RESET}}
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/_extensions/StatisticsGreenland/statglshortcodes/hvorstaarjeg.js"></script>
+<script>
+  if (window.initHvorStaarJeg) {
+    window.initHvorStaarJeg("{{ID}}");
+  } else {
+    console.error("hvorstaarjeg.js not loaded: initHvorStaarJeg missing");
+  }
+</script>
+]]
+
+  html = html:gsub("{{ID}}",           esc(id))
+  html = html:gsub("{{EYEBROW}}",      esc(eyebrow))
+  html = html:gsub("{{TITLE}}",        esc(title))
+  html = html:gsub("{{SUBTITLE}}",     esc(subtitle))
+  html = html:gsub("{{DATA}}",         data)           -- raw JSON, no esc needed
+  html = html:gsub("{{I18N}}",         esc(i18n_json))
+  html = html:gsub("{{PRIVACY_NOTE}}", esc(privacy_note))
+  html = html:gsub("{{INCOME_LABEL}}", esc(income_label))
+  html = html:gsub("{{GUESS_LABEL}}",  esc(guess_label))
+  html = html:gsub("{{BTN_REVEAL}}",   esc(btn_reveal))
+  html = html:gsub("{{BTN_RESET}}",    esc(btn_reset))
+
+  return pandoc.RawBlock("html", html)
+end
+
+----------------------------------------------------------------------
+-- filter: page-wide selector that drives `data-filter-*` subscribers.
+--
+--   {{< filter
+--       id="station"
+--       label="Lokalitet"
+--       options='`r jsonlite::toJSON(stations)`'
+--       all_label="Alle lokaliteter"
+--   >}}
+--
+-- Subscribers (anywhere on the page) opt in via attributes:
+--   * data-filter-show="station:Nuuk" -> visible only when station=Nuuk
+--   * data-filter-show="station:*"    -> visible only when any value picked
+--   * data-filter-show="station:"     -> visible only when no value picked
+--   * data-filter-series="station"    -> Highcharts series inside this
+--                                        element are toggled by their
+--                                        series.tags.station value
+----------------------------------------------------------------------
+function filter(args, kwargs, meta)
+  local U = pandoc.utils.stringify
+
+  local function esc(s)
+    return (tostring(s):gsub("%%", "%%%%"))
+  end
+
+  local function h(s)
+    s = U(s or "")
+    return (s:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")
+            :gsub('"',"&quot;"):gsub("'","&#39;"))
+  end
+
+  local id          = U(kwargs["id"]          or "filter")
+  local label       = U(kwargs["label"]       or "")
+  local all_label   = U(kwargs["all_label"]   or "Alle")
+  local max_width   = U(kwargs["max_width"]   or "24rem")
+  local options_raw = U(kwargs["options"]     or "[]")
+  local default_val = U(kwargs["default"]     or "")
+
+  -- options arrives as a JSON array string, typically from
+  -- `r jsonlite::toJSON(vec)`. Parse it tolerantly: split on quote-comma
+  -- boundaries so we don't need a JSON parser in Lua.
+  local opts = {}
+  -- strip leading/trailing brackets/whitespace
+  local body = options_raw:gsub("^%s*%[", ""):gsub("%]%s*$", "")
+  -- match quoted strings
+  for s in body:gmatch('"([^"]*)"') do
+    table.insert(opts, s)
+  end
+  -- fallback for unquoted comma list
+  if #opts == 0 and body ~= "" then
+    for s in body:gmatch("[^,]+") do
+      local v = s:gsub("^%s+", ""):gsub("%s+$", "")
+      if v ~= "" then table.insert(opts, v) end
+    end
+  end
+
+  local options_html = string.format(
+    '<option value="">%s</option>', h(all_label)
+  )
+  for _, v in ipairs(opts) do
+    local selected_attr = (v == default_val) and ' selected' or ''
+    options_html = options_html ..
+      string.format('<option value="%s"%s>%s</option>', h(v), selected_attr, h(v))
+  end
+
+  -- JS snippet to apply the default value after registration.
+  local default_js = ""
+  if default_val ~= "" then
+    default_js = string.format(
+      '\n    window.StatglFilter.set("%s", "%s");',
+      h(id), h(default_val)
+    )
+  end
+
+  local label_html = ""
+  if label ~= "" then
+    label_html = string.format(
+      '<label for="%s" class="form-label fw-semibold">%s</label>',
+      h(id), h(label)
+    )
+  end
+
+  local html = string.format([[
+<div class="statgl-filter-wrap mb-4" data-statgl-filter="%s">
+  %s
+  <select id="%s" class="form-select statgl-filter-select" style="max-width: %s;">
+    %s
+  </select>
+</div>
+<script src="/_extensions/StatisticsGreenland/statglshortcodes/statgl-filter.js"></script>
+<script>
+  if (window.StatglFilter && window.StatglFilter.register) {
+    window.StatglFilter.register("%s");%s
+  } else {
+    document.addEventListener("DOMContentLoaded", function() {
+      if (window.StatglFilter && window.StatglFilter.register) {
+        window.StatglFilter.register("%s");%s
+      } else {
+        console.error("statgl-filter.js not loaded: StatglFilter missing");
+      }
+    });
+  }
+</script>
+]],
+    h(id),
+    label_html,
+    h(id),
+    h(max_width),
+    options_html,
+    h(id), esc(default_js),
+    h(id), esc(default_js)
+  )
 
   return pandoc.RawBlock("html", html)
 end

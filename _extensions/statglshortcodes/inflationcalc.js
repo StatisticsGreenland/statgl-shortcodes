@@ -32,13 +32,16 @@
     const API_URL =
       "https://bank.stat.gl:443/api/v1/da/Greenland/PR/PRXPRISF.px";
 
+    // PRXPRISF has one index series per base period; the Jan 1971=100
+    // series is the only one covering the full range (1971H1 onwards).
+    // Ratios between periods are base-independent, so any series works.
     const API_BODY = {
       query: [
         {
-          code: "index",
+          code: "indeks",
           selection: {
             filter: "item",
-            values: ["0"], // total CPI
+            values: ["1971H1"],
           },
         },
       ],
@@ -50,6 +53,21 @@
     // Maps from original time index -> value/label
     const valueByIdx = {};
     const labelByIdx = {};
+
+    // Half-year codes ("2008H2") shown as the half's first month, in the
+    // page language (<html lang>): da/kl "jul. 2008", en "Jul 2008".
+    // Anything that isn't a half-year code is shown unchanged.
+    const LANG = (document.documentElement.lang || "da").slice(0, 2);
+    const HALF_MONTH = {
+      da: ["jan.", "jul."],
+      kl: ["jan.", "jul."],
+      en: ["Jan", "Jul"],
+    }[LANG] || ["jan.", "jul."];
+    function displayLabel(code) {
+      const m = /^(\d{4})H([12])$/i.exec(String(code || "").trim());
+      if (!m) return String(code || "");
+      return HALF_MONTH[Number(m[2]) - 1] + " " + m[1];
+    }
     let sortedIndices = []; // newest -> oldest
 
     function formatNumber(x) {
@@ -83,8 +101,8 @@
       const adjusted = amount * (idxTo / idxFrom);
       resultSpan.textContent = formatNumber(adjusted);
 
-      const fromLabel = labelByIdx[fromIdxKey] || "";
-      const toLabel = labelByIdx[toIdxKey] || "";
+      const fromLabel = displayLabel(labelByIdx[fromIdxKey] || "");
+      const toLabel = displayLabel(labelByIdx[toIdxKey] || "");
 
       toLabelSpan.textContent = toLabel;
       metaSpan.textContent =
@@ -128,22 +146,24 @@
           throw new Error("Bad json-stat structure");
         }
 
-        const timeDim = dataset.dimension.time;
-        const labelMap = timeDim && timeDim.category && timeDim.category.label;
+        const timeDim = dataset.dimension.tid;
+        const cat = timeDim && timeDim.category;
+        const labelMap = cat && cat.label;
+        const indexMap = cat && cat.index;
         const vals = dataset.value;
-        const n =
-          dataset.size && dataset.size[0] ? dataset.size[0] : vals.length;
 
-        if (!labelMap || !Array.isArray(vals)) {
+        if (!labelMap || !indexMap || !Array.isArray(vals)) {
           metaSpan.textContent =
             "Manglende tidsdimension eller værdier i json-stat.";
           throw new Error("Missing time labels or values");
         }
 
+        // Only one indeks value is requested, so value[i] is period i
         const indices = [];
-        for (let i = 0; i < n; i++) {
+        for (const code of Object.keys(indexMap)) {
+          const i = indexMap[code];
           const v = vals[i];
-          const lab = labelMap[String(i)];
+          const lab = labelMap[code];
 
           if (v == null || v === ".." || !lab) continue;
 
@@ -168,7 +188,7 @@
         // Populate dropdowns in sorted order (newest -> oldest)
         sortedIndices.forEach((idx) => {
           const key = String(idx);
-          const lab = labelByIdx[key] || "";
+          const lab = displayLabel(labelByIdx[key] || "");
 
           const optFrom = document.createElement("option");
           optFrom.value = key;
@@ -185,14 +205,13 @@
         const newestIdx = sortedIndices[0];
         const newestKey = String(newestIdx);
         toSelect.value = newestKey;
-        toLabelSpan.textContent = labelByIdx[newestKey] || "";
+        toLabelSpan.textContent = displayLabel(labelByIdx[newestKey] || "");
 
-        // Default "Fra" = 2008 januar if present, otherwise oldest
+        // Default "Fra" = 2008H1 if present, otherwise oldest
         let fromDefaultIdx = sortedIndices[sortedIndices.length - 1]; // oldest
         for (const idx of sortedIndices) {
-          const key = String(idx);
-          const lab = (labelByIdx[key] || "").toLowerCase();
-          if (lab.includes("2008") && lab.includes("januar")) {
+          const lab = (labelByIdx[String(idx)] || "").toUpperCase();
+          if (lab.startsWith("2008H1")) {
             fromDefaultIdx = idx;
             break;
           }

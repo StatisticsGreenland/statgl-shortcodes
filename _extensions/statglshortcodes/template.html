@@ -53,14 +53,18 @@ $endif$
 $for(css)$
 <link rel="stylesheet" href="$css$" />
 $endfor$
+$for(hreflang_links)$
+<link rel="alternate" hreflang="$it.lang$" href="$it.href$">
+$endfor$
 </head>
 
 <body>
 
+<a class="skip-link" href="#quarto-document-content">$if(lang_is_da)$Spring til indhold$elseif(lang_is_kl)$Imarisaanut pissaartillugu$else$Skip to content$endif$</a>
+
 $for(include-before)$
 $include-before$
 $endfor$
-
 $if(title)$
 $title-block.html()$
 $elseif(subtitle)$
@@ -80,6 +84,29 @@ $title-block.html()$
 $elseif(keywords)$
 $title-block.html()$
 $endif$
+$if(release-date)$
+<div class="release-meta small mb-3">
+$if(lang_is_da)$
+$if(release-date)$<span>Seneste udgivelse: $release-date$</span>$endif$$if(next-release)$<span>Næste udgivelse: $next-release$</span>$endif$
+$elseif(lang_is_kl)$
+$if(release-date)$<span>Saqqummersinneqarsimasoq kingulleq: $release-date$</span>$endif$$if(next-release)$<span>Saqqummersinneqartussap tullia: $next-release$</span>$endif$
+$else$
+$if(release-date)$<span>Latest release: $release-date$</span>$endif$$if(next-release)$<span>Next release: $next-release$</span>$endif$
+$endif$
+</div>
+$elseif(next-release)$
+<div class="release-meta small mb-3">
+$if(lang_is_da)$
+<span>Næste udgivelse: $next-release$</span>
+$elseif(lang_is_kl)$
+<span>Saqqummersinneqartussap tullia: $next-release$</span>
+$else$
+<span>Next release: $next-release$</span>
+$endif$
+</div>
+$endif$
+<div class="print-footer" id="print-footer"></div>
+
 
 
 $if(toc)$
@@ -88,61 +115,67 @@ $endif$
 
 $body$
 
+$if(lang_is_en)$$if(i18n.source)$
+<p class="ai-note small">
+<i class="ph ph-translate" aria-hidden="true"></i>
+<span>The text on this page was translated with AI assistance. Graphs, tables and key figures are not AI-generated.</span>
+</p>
+$endif$$endif$
+
+
+
 $for(include-after)$
 $include-after$
 $endfor$
 
-
 </body>
 
 <div class="kpi-grid">
+  <div class="render-stamp">
+    $if(lang_is_da)$Genereret$elseif(lang_is_kl)$Pilersinneqarpoq$else$Rendered$endif$ <time id="render-stamp" datetime="$render_stamp$">$render_stamp$</time>
+  </div>
   <footer class="border-top">
   <div class="grid footergrid py-4">
     <!-- Contact -->
     <div class="g-col-12 g-col-md-4">
       $if(lang_is_da)$
-        <h5 class="fw-bold mb-2">Grønlands Statistik</h5>
+        <h2 class="h5 fw-bold mb-2">Grønlands Statistik</h2>
         <ul class="list-unstyled mb-3 text-muted small">
           <li class="mb-1 footer-item">
-             <i class="bi bi-geo-alt me-2"></i>
+             <i class="ph ph-map-pin me-2"></i>
              <span class="footer-address">
                Sipisaq Avannarleq 1<br>
                3900 Nuuk
           </li>
-          <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
-          <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
-          <li class="mb-1"><i class="bi bi-clock me-2"></i>Man–Fre 09:00–15:00</li>
+          <li class="mb-1"><i class="ph ph-phone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
+          <li class="mb-1"><i class="ph ph-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
+          <li class="mb-1"><i class="ph ph-clock me-2"></i>Man–Fre 09:00–15:00</li>
         </ul>
         <div class="small text-muted">
-          <a href="/about/" class="link-secondary me-3">Om os</a>
-          <a href="/contact/" class="link-secondary me-3">Kontakt</a>
-          <a href="/privacy/" class="link-secondary">Privatliv</a>
+          <a href="/da/about/" class="link-secondary me-3">Om os</a>
+          <a href="/da/about/staff.html" class="link-secondary">Kontakt</a>
         </div>
       $elseif(lang_is_kl)$
-        <h5 class="fw-bold mb-2">Kalaallit Nunaanni Naatsorsueqqissaartarfik</h5>
+        <h2 class="h5 fw-bold mb-2">Naatsorsueqqissaartarfik</h2>
         <ul class="list-unstyled mb-3 text-muted small">
-          <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
-          <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
-          <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
-          <li class="mb-1"><i class="bi bi-clock me-2"></i>Ata–Tall 09:00–15:00</li>
+          <li class="mb-1"><i class="ph ph-map-pin me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
+          <li class="mb-1"><i class="ph ph-phone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
+          <li class="mb-1"><i class="ph ph-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
+          <li class="mb-1"><i class="ph ph-clock me-2"></i>Ata–Tall 09:00–15:00</li>
         </ul>
         <div class="small text-muted">
-          <a href="/kl/about/" class="link-secondary me-3">Pisinnaasat pillugit</a>
-          <a href="/kl/contact/" class="link-secondary me-3">Attavissat</a>
-          <a href="/kl/privacy/" class="link-secondary">Nakkutilliineq</a>
+          <a href="/kl/about/" class="link-secondary">Pisinnaasat pillugit</a>
         </div>
       $else$
-        <h5 class="fw-bold mb-2">Statistics Greenland</h5>
+        <h2 class="h5 fw-bold mb-2">Statistics Greenland</h2>
         <ul class="list-unstyled mb-3 text-muted small">
-          <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
-          <li class="mb-1"><i class="bi bi-telephone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
-          <li class="mb-1"><i class="bi bi-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
-          <li class="mb-1"><i class="bi bi-clock me-2"></i>Mon–Fri 09:00–15:00</li>
+          <li class="mb-1"><i class="ph ph-map-pin me-2"></i>Sipisaq Avannarleq 1, 3900 Nuuk</li>
+          <li class="mb-1"><i class="ph ph-phone me-2"></i><a class="link-secondary" href="tel:+299345770">+299 34 57 70</a></li>
+          <li class="mb-1"><i class="ph ph-envelope me-2"></i><a class="link-secondary" href="mailto:stat@stat.gl">stat@stat.gl</a></li>
+          <li class="mb-1"><i class="ph ph-clock me-2"></i>Mon–Fri 09:00–15:00</li>
         </ul>
         <div class="small text-muted">
-          <a href="/en/about/" class="link-secondary me-3">About</a>
-          <a href="/en/contact/" class="link-secondary me-3">Contact</a>
-          <a href="/en/privacy/" class="link-secondary">Privacy</a>
+          <a href="/en/about.html" class="link-secondary">About</a>
         </div>
       $endif$
     </div>
@@ -150,27 +183,30 @@ $endfor$
     <!-- Data & tools -->
     <div class="g-col-12 g-col-md-4">
       $if(lang_is_da)$
-        <h5 class="fw-bold mb-2">Data & værktøjer</h5>
+        <h2 class="h5 fw-bold mb-2">Data & værktøjer</h2>
         <ul class="list-unstyled text-muted mb-0">
-          <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Statistikbank</a></li>
-          <li class="mb-1"><a class="link-secondary" href="/udgivelser/kalender/">Udgivelseskalender</a></li>
-          <li class="mb-1"><a class="link-secondary" href="/api/">API & dokumentation</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/da/about/statbank.html">Statistikbank</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/da/release.html">Udgivelseskalender</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/da/about/api/api.html">API & dokumentation</a></li>
+          <li class="mb-1"><a class="link-secondary report-bug" href="#" rel="nofollow">Meld en fejl</a></li>
           <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
         </ul>
       $elseif(lang_is_kl)$
-        <h5 class="fw-bold mb-2">Data & sakkussat</h5>
+        <h2 class="h5 fw-bold mb-2">Data & sakkussat</h2>
         <ul class="list-unstyled text-muted mb-0">
-          <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Naatsorsueqqissaarnermut toqqorsivik</a></li>
-          <li class="mb-1"><a class="link-secondary" href="/kl/udgivelser/kalender/">Udgivisaqarnerup kalendari</a></li>
-          <li class="mb-1"><a class="link-secondary" href="/kl/api/">API & allakkat</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/kl/about/statbank.html">Kisitsisaataasivik</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/kl/release.html">Udgivisaqarnerup kalendari</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/kl/about/api/api.html">API & allakkat</a></li>
+          <li class="mb-1"><a class="link-secondary report-bug" href="#" rel="nofollow">Kukkuneq nalunaarutigiuk</a></li>
           <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
         </ul>
       $else$
-        <h5 class="fw-bold mb-2">Data & tools</h5>
+        <h2 class="h5 fw-bold mb-2">Data & tools</h2>
         <ul class="list-unstyled text-muted mb-0">
-          <li class="mb-1"><a class="link-secondary" href="https://bank.stat.gl">Statbank</a></li>
-          <li class="mb-1"><a class="link-secondary" href="/en/releases/calendar/">Release calendar</a></li>
-          <li class="mb-1"><a class="link-secondary" href="/en/api/">API & documentation</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/en/about/statbank.html">Statbank</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/en/release.html">Release calendar</a></li>
+          <li class="mb-1"><a class="link-secondary" href="/en/about/api/api.html">API & documentation</a></li>
+          <li class="mb-1"><a class="link-secondary report-bug" href="#" rel="nofollow">Report a bug</a></li>
           <li><a class="link-secondary" href="https://github.com/StatisticsGreenland">GitHub</a></li>
         </ul>
       $endif$
@@ -195,7 +231,7 @@ $endfor$
       $if(lang_is_da)$
         <div>© <span id="footer-year"></span> Grønlands Statistik · Data og indhold må bruges med kildeangivelse.</div>
       $elseif(lang_is_kl)$
-        <div>© <span id="footer-year"></span> Kalaallit Nunaanni Naatsorsueqqissaartarfik · Paasissutissat atorneqarsinnaapput oqaaseqarnermik ilanngussinikkut.</div>
+        <div>© <span id="footer-year"></span> Naatsorsueqqissaartarfik · Paasissutissat atorneqarsinnaapput oqaaseqarnermik ilanngussinikkut.</div>
       $else$
         <div>© <span id="footer-year"></span> Statistics Greenland · Data and content may be used with attribution.</div>
       $endif$
@@ -205,6 +241,73 @@ $endfor$
 
   </footer>
 </div>
+
+<!-- Meld en fejl (beta). Privatliv: intet sendes automatisk; linket åbner brugerens eget
+     mailprogram med en tekst brugeren selv kan rette. Kun side-URL, sprog, enhedstype og
+     browserfamilie udfyldes. Ingen session-id, IP, referrer eller sessionStorage.
+     Adressen står ikke i markup; den samles ved klik fra tegnkoder (mod scrapere). -->
+<script>
+(function () {
+  var MAIL = String.fromCharCode(101,109,109,116) + String.fromCharCode(64) +
+             [115,116,97,116].map(function (c) { return String.fromCharCode(c); }).join("") +
+             String.fromCharCode(46) + "gl";
+  var lang = (document.documentElement.lang || "da").slice(0, 2);
+  var t = {
+    da: { subject: "Fejl på stat.gl (beta)",
+          intro: "Beskriv fejlen (hvad gjorde du, hvad forventede du, hvad skete der):\n\n\n\n",
+          auto: "Udfyldt automatisk, slet gerne det du ikke vil dele:",
+          policy: "Vi bruger kun mailen til at rette fejlen og sletter den bagefter." },
+    en: { subject: "Bug on stat.gl (beta)",
+          intro: "Describe the bug (what you did, what you expected, what happened):\n\n\n\n",
+          auto: "Filled in automatically, delete anything you do not want to share:",
+          policy: "We only use this email to fix the bug and delete it afterwards." }
+  };
+  var s = t[lang] || t.da;
+  function device() {
+    var w = window.innerWidth || 0;
+    return w < 768 ? "mobil" : w < 1024 ? "tablet" : "desktop";
+  }
+  function browser() {
+    var ua = navigator.userAgent;
+    if (/Edg\//.test(ua)) return "Edge";
+    if (/OPR\//.test(ua)) return "Opera";
+    if (/Firefox\//.test(ua)) return "Firefox";
+    if (/Chrome\//.test(ua)) return "Chrome";
+    if (/Safari\//.test(ua)) return "Safari";
+    return "andet";
+  }
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest(".report-bug");
+    if (!a) return;
+    e.preventDefault();
+    var url = location.origin + location.pathname + location.search;
+    var body = s.intro + s.auto + "\n" +
+      "Side: " + url + "\n" + "Sprog: " + lang + "\n" +
+      "Enhed: " + device() + "\n" + "Browser: " + browser() + "\n\n" + s.policy + "\n";
+    location.href = "mailto:" + MAIL + "?subject=" + encodeURIComponent(s.subject) +
+      "&body=" + encodeURIComponent(body);
+  });
+})();
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const fmt = { year: "numeric", month: "2-digit", day: "2-digit",
+                hour: "2-digit", minute: "2-digit" };
+  const rs = document.getElementById("render-stamp");
+  if (rs) {
+    const r = new Date(rs.getAttribute("datetime"));
+    if (!isNaN(r)) rs.textContent = r.toLocaleString("da-DK", fmt);
+  }
+  const d = new Date();
+  const stamp = d.toLocaleString("da-DK", fmt);
+  const title = document.title || "";
+  document.getElementById("print-footer").textContent =
+    (title ? title + " | " : "") + "Udskrevet: " + stamp;
+});
+</script>
+
+
 
 <script>
 document.addEventListener('click', (e) => {
@@ -262,5 +365,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.statglInit) window.statglInit();
   });
 </script>
+
+<!-- Page-view logging and visitor notice: _includes/analytics.html,
+     wired in via include-after-body in _quarto.yml. -->
 
 </html>

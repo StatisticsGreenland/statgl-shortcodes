@@ -1,6 +1,54 @@
-project: 
+# Skabelon-projekt til en ny stat.gl-side (statgl::pub_project).
+# Navbar og footer udfyldes af site.js ud fra data-nav-nøglerne nedenfor,
+# præcis som i statwww. Hold blokken i sync med statwww/_quarto.yml.
+project:
   type: website
+  render:
+    - "*.qmd"
+
+website:
+  favicon: favicon.ico
+  # Sidebaren skjules af styles.css, men den skal findes: alle layoutregler
+  # er bundet til body.nav-sidebar, som Quarto kun sætter med en sidebar.
+  sidebar:
+    contents: auto
+    collapse-level: 1
+  navbar:
+    logo: GSLogo.png
+    logo-href: "#"
+    left:
+      # Labels, hrefs and per-language availability live in site.js (var NAV).
+      # The data-nav key is the only contract between this file and site.js.
+      - text: "<span class='nav-i18n' data-nav='statistics'></span>"
+        menu:
+          - text: "<span class='nav-i18n' data-nav='statistics.inuit'></span>"
+            href: "#"
+          - text: "<span class='nav-i18n' data-nav='statistics.aningaasat'></span>"
+            href: "#"
+          - text: "<span class='nav-i18n' data-nav='statistics.sila'></span>"
+            href: "#"
+          - text: "---"
+          - text: "<span class='nav-i18n' data-nav='statistics.all'></span>"
+            href: "#"
+      - text: "<span class='nav-i18n' data-nav='release'></span>"
+        menu:
+          - text: "<span class='nav-i18n' data-nav='release.calendar'></span>"
+            href: "#"
+          - text: "<span class='nav-i18n' data-nav='release.news'></span>"
+            href: "#"
+          - text: "<span class='nav-i18n' data-nav='release.gif'></span>"
+            href: "#"
+          - text: "<span class='nav-i18n' data-nav='release.archive'></span>"
+            href: "#"
+      - text: "<span class='nav-i18n' data-nav='docs'></span>"
+        href: "#"
+      - text: "<span class='nav-i18n' data-nav='about'></span>"
+        href: "#"
+      - text: "<span class='nav-i18n' data-nav='statbank'></span>"
+        href: "#"
+
 format: statglshortcodes-html
+
 execute:
   echo: false
   message: false
