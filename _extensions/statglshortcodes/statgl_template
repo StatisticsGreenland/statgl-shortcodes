@@ -1,44 +1,132 @@
 ---
+# Skabelon til en ny emneside på stat.gl.
+# Rediger title/subtitle, udskift EMNEKODE (fx KO) og tabelkoderne i R-kodeblokkene.
+# Når siden er færdig, flyttes den til statwww som
+#   da/statistics/<inuit|aningaasat|sila>/<EMNEKODE>/index.qmd
+# og de to listing-blokke nederst i denne header slås til.
 title: "Titel"
 subtitle: "Undertekst"
-format: statglshortcodes-html
-execute:
-  echo: false
-  message: false
-  warning: false
+toc: true
+toc-title: "Titel"
+show-release-date: false
+icon: ph-chart-line        # Phosphor-ikon, se https://phosphoricons.com
+tag: emne                   # kort nøgle, bruges til at koble udgivelser til siden
+i18n:
+  locales: [en, kl]         # twins (en/kl) genereres af statwww ved render
+# Listings virker kun inde i statwww (de læser staff.yml og releases/).
+# Fjern kommentartegnene når siden flyttes derover:
+# listing:
+#   - id: EMNEKODE-publications
+#     contents: ../../../releases/*.qmd
+#     template: ../../../../ejs/news-row.ejs
+#     date-format: "YYYY-MM-DD"
+#     include:
+#       tag: Titel
+#   - id: EMNEKODE-contact
+#     contents: ../../../../staff.yml
+#     template: ../../../../ejs/staff.ejs
+#     include:
+#       topics: EMNEKODE
 ---
 
-```{r}
+Kort, neutral introduktion til emnet i to til fire sætninger. Hvad dækker statistikken, hvor tit opgøres den, og hvad kan den bruges til.
+
+```{r setup}
+#| include: false
+library(highcharter)
 library(tidyverse)
 library(statgl)
+library(glue)
 ```
 
-```{r}
-df1 <- statgl_fetch("BEDSTALL",
-  district = px_agg("BEXSTALLstørrelse.agg",
-    "Hovedstad",
-    "Hovedbosteder",
-    "Større bosteder",
-    "Bosteder",
-    "Mindre bosteder",
-    "Mindste bosteder"
-  ),
-  content = "fb",
+```{r kpi-data}
+#| include: false
+# Nøgletal til kortene øverst. Udskift tabelkode og variabler.
+kpi <- statgl_fetch("BEXST1",
+  time = px_top(1),
   .col_code = TRUE
-)
+) %>%
+  drop_na(value)
 
-p1 <- statgl_plot(df1, time, group = fct_inorder(district))
+kpi_tid   <- kpi$time
+kpi_vaerdi <- format(kpi$value, big.mark = ".", decimal.mark = ",")
+```
+
+:::{.grid}
+
+:::{.g-col-12 .g-col-md-4}
+{{< kpicard
+ title = "Nøgletal"
+ anchor = "EMNEKODE-noegletal"
+ subtitle = "`r kpi_tid`"
+ value = "`r kpi_vaerdi`"
+ style = "height:100%"
+>}}
+:::
+
+:::
+
+### Udvalgte statistikker {#stats}
+
+```{r fig-eksempel}
+# Udskift tabelkode og variabler. Figuren vises i shorty'en nedenfor.
+p_eksempel <- statgl_fetch("BEXST1",
+  .col_code = TRUE
+) %>%
+  drop_na(value) %>%
+  statgl_plot(time,
+    type = "line",
+    palette = "blue"
+  )
 ```
 
 {{< shorty
-  title = "Demografisk forsørgerbyrde"
-  subtitle = "1977 - 2025"
-  description = "Den demografiske forsørgerbyrde beregnes som det matematiske forhold mellem den del af befolkningen, der ikke er tilknyttet arbejdsmarkedet og dermed skal forsørges, og forsørgerne, altså den arbejdsdygtige befolkning."
-  plot = '`r p1`'
-  link = "[Se tallene i Statistikbanken](https://bank.stat.gl:443/sq/285d1569-0136-49a8-9347-98158fa57300)"
-  doc1_title = "Her er en titel"
-  doc1_text = "Her kan der stå noget tekst"
-  doc2_title = "Her er en anden titel"
-  doc2_text = "Her kan der stå noget andet tekst"
+ title = "Overskrift på statistikken"
+ anchor = "EMNEKODE-eksempel"
+ description = "Statisk beskrivelse uden tal: hvad serien viser, hvordan den opgøres, og hvad den kan bruges til. <p> Andet afsnit om fx opgørelsesform eller forbehold."
+ plot_title = "Figurens titel"
+ plot_subtitle = "Enhed"
+ plot = '`r p_eksempel`'
+ link = "[Se tallene i Statistikbanken](https://bank.stat.gl/pxweb/da/Greenland/)"
 >}}
 
+### Se også {#more}
+
+{{< feature
+ eyebrow = "Statistikbanken"
+ title = "Se tallene i Statistikbanken"
+ subtitle = "Alle bagvedliggende tabeller for emnet."
+ icon = "ph-vault"
+ link = "https://bank.stat.gl/pxweb/da/Greenland/Greenland__EMNEKODE/"
+>}}
+
+### Metode, begreber og datagrundlag {#method}
+
+{{< feature
+ eyebrow = "Metode"
+ title = "Dokumentation"
+ subtitle = "Beskrivelse af datagrundlag og metode."
+ icon = "ph-file-text"
+ link = "https://stat.gl"
+>}}
+
+{{< feature
+ eyebrow = "Afklaring"
+ title = "Begreber"
+ subtitle = "Klik på et begreb for at se forklaringen."
+ icon = "ph-notebook"
+ doc1_title = "Begreb"
+ doc1_text = "Forklaring af begrebet."
+>}}
+
+<!-- De to sidste sektioner kræver listings og virker først inde i statwww.
+### Seneste udgivelser {#releases}
+
+::: {#EMNEKODE-publications}
+:::
+
+### Kontakt {#contact}
+
+::: {#EMNEKODE-contact}
+:::
+-->
